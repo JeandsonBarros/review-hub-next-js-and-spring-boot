@@ -1,0 +1,106 @@
+/* ------- Login and Register styles --------- */
+
+.form_auth {
+    width: 450px;
+    min-height: 300px;
+    padding: 10px;
+}
+
+@media only screen and (max-width: 600px) {
+    .form_auth {
+        width: 250px;
+    }
+}
+
+.form_auth>div {
+    width: 100%;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.form_auth>h2 {
+    margin: 20px;
+
+}
+
+/* ------- Account styles ---------- */
+
+.img_profile_select {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.img_profile_select {
+    height: 100px;
+    width: 100px;
+}
+
+.input_file {
+    display: none;
+}
+
+.label_input_file {
+    cursor: pointer;
+    margin: 10px;
+    color: gray;
+}
+
+.div_loading {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(75, 75, 75, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 999;
+}
+
+/* --------- Users styles ------------- */
+
+.user_list {
+    margin-top: 20px;
+}
+
+.item_user_list {
+    border-bottom: 1px solid var(--primary);
+    padding: 5px;
+}
+
+.item_user_list:hover {
+    background-color: var(--secondary-hover);
+}
+
+.item_user_list img {
+    margin-right: 5px;
+}
+
+.item_user_list small {
+    color: gray;
+}
+
+.container_modal_user {
+    margin: 30px;
+}
+
+.container_modal_user>*,
+.container_modal_user>form>* {
+    margin-bottom: 20px;
+}
+
+.container_modal_user>form:first-of-type {
+   border-bottom: 1px solid rgba(128, 128, 128, 0.425);
+}
+
+.control_radio {
+    display: flex;
+    flex-direction: row;
+    margin-right: 20px;
+}
+
+.control_radio input[type=radio] {
+    margin-right: 10px;
+}

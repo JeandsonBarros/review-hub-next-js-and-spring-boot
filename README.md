@@ -1,8 +1,20 @@
+# Front-end Review Hub by Next.js
+
+<img src="./print2.png"/>
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies by running the following command in the terminal with the project directory:
+
+```bash
+npm install
+# or
+npm i
+```
+
+Then run the development server:
 
 ```bash
 npm run dev

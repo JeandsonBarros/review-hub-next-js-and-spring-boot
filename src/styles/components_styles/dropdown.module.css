@@ -1,0 +1,22 @@
+.outside_area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 780;
+}
+
+.content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--secondary);
+    border-radius: 10px;
+    z-index: 781;
+    min-height: 40px;
+    max-width: 200px;
+    min-width: 50px;  
+    box-shadow: 2px 2px 7px rgba(0, 0, 0, 0.3);
+}

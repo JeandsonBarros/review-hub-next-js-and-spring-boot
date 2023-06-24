@@ -1,0 +1,13 @@
+.footer_component {
+    padding: 5px;
+    height: 50px;
+    border-top: 1px solid #85858536;
+  }
+  
+  .footer_component a {
+    margin: 2px;
+  }
+  
+  .footer_component a:hover {
+    color: #b91c1c;
+  }

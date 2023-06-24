@@ -1,0 +1,25 @@
+.content_card {
+    height: 340px;
+    padding: 5px;
+}
+
+.content_card>img {
+    border-radius: 10px;
+    height: 180px;
+    width: 180px;
+    object-fit: cover;
+}
+
+.content_card>div {
+    height: 90px;
+    padding: 5px;
+}
+
+.div_stars {
+    color: #f31260;
+    font-size: 25px;
+}
+
+.link {
+    width: 240px;
+}

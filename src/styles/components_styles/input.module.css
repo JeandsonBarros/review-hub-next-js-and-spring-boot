@@ -1,0 +1,30 @@
+.label_input {
+    cursor: text;
+    margin-left: 2px;
+    color: gray;
+}
+
+.label_input > span {
+    margin-right: 2px;
+}
+
+.input_component {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    cursor: text;
+    background-color: transparent;
+    outline: 0;
+    border-bottom: 1px solid gray;
+    height: 40px;
+    min-width: 200px;
+}
+
+.input_component input {
+    width: 98%;
+    margin-left: 2px;
+    margin-bottom: 2px;
+    font-size: 16px;
+    display: none;
+    transition: all .1s ease-out;
+}

@@ -1,0 +1,20 @@
+.card_boder,
+.card {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px;
+    border-radius: 25px;
+    background: var(--background);
+    -webkit-box-shadow: 10px 10px 125px -52px rgba(0, 0, 0, 0.75);
+    -moz-box-shadow: 10px 10px 125px -52px rgba(0, 0, 0, 0.75);
+    box-shadow: 10px 10px 125px -52px rgba(0, 0, 0, 0.75);
+    min-width: 200px;
+    min-height: 200px;
+   
+}
+
+.card_boder {
+    border: 1px solid var(--primary);
+}
