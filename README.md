@@ -11,7 +11,7 @@ To get detailed information about the API, run the API and open the following li
 
 To run the project, you need to pass the following information in application.properties:
 
-- Database configs:
+- Database configs:<br/>
 `spring.datasource.url=jdbc:mysql://localhost:3306/review_hub`<br/>
 `spring.datasource.username=root`<br/>
 `spring.datasource.password=`<br/>
