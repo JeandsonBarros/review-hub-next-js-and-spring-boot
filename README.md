@@ -2,6 +2,8 @@
 
 API developed for product reviews system, the adm to register products and another user give their opinions about the products.
 
+Front-end: https://github.com/JeandsonBarros/review-hub-next-js-and-spring-boot/tree/front-end
+
 <img src="./prints/print1.png"/>
 To get detailed information about the API, run the API and open the following link in your browser: http://localhost:8080/swagger-ui/index.html
 
