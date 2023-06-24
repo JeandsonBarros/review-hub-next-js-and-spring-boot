@@ -6,6 +6,8 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
+
+
 First, install the dependencies by running the following command in the terminal with the project directory:
 
 ```bash
