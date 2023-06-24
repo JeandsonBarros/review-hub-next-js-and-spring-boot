@@ -1,11 +1,14 @@
 # Front-end Review Hub by Next.js
 
+System developed with Next.js on the front-end and Spring Boot on the back-end for product reviews system, the administrator to register products and another user to give his opinion about the products. 
+
+Back-end: https://github.com/JeandsonBarros/review-hub-next-js-and-spring-boot/tree/back-end
+
 <img src="./print2.png"/>
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
-
 
 
 First, install the dependencies by running the following command in the terminal with the project directory:
