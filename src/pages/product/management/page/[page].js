@@ -146,7 +146,7 @@ function Product({ product, updateProduct, removeProduct }) {
 
                 <div className='flex_row items_center'>
 
-                    <img src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/card-image.svg"} className={styles.img_select} />
+                    <img src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/product-icon.webp"} className={styles.img_select} />
 
                     <div>
 
@@ -154,7 +154,7 @@ function Product({ product, updateProduct, removeProduct }) {
 
                         <p style={{ marginTop: 10 }}>
                             {(() => {
-                                return product.price.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+                                return product.price.toLocaleString("en-US", { style: "currency", currency: "USD" });
                             })()}
                         </p>
 
@@ -289,11 +289,27 @@ function ModalProduct({ productUpdate, onSave, isVisible, onClosed, title }) {
 
                     <h1> {title || "Form product"} </h1>
 
-                    <Input placeholder="Name" value={product.name || ''} setValue={text => setDataProduct(text, 'name')} required={true} />
+                    <Input
+                        placeholder="Name"
+                        value={product.name || ''}
+                        setValue={text => setDataProduct(text, 'name')}
+                        required={true}
+                    />
 
-                    <Input placeholder="Category" value={product.category || ''} setValue={text => setDataProduct(text, 'category')} required={true} />
+                    <Input
+                        placeholder="Category"
+                        value={product.category || ''}
+                        setValue={text => setDataProduct(text, 'category')}
+                        required={true}
+                    />
 
-                    <Input placeholder="Price" value={product.price || ''} setValue={text => setDataProduct(text, 'price')} type="number" required={true} />
+                    <Input
+                        placeholder="Price"
+                        value={product.price || NaN}
+                        setValue={text => setDataProduct(text, 'price')}
+                        type="number"
+                        required={true}
+                    />
 
                     <div >
                         <label>Description:</label>

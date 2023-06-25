@@ -154,7 +154,7 @@ export default function productDetails() {
                 {product &&
                     <div className={stylesProducts.details_product}>
 
-                        <img className={stylesProducts.img_details} src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/card-image.svg"} />
+                        <img className={stylesProducts.img_details} src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/product-icon.webp"} />
 
                         <div className={stylesProducts.vertical_line} />
 
@@ -165,7 +165,7 @@ export default function productDetails() {
                             <h1>{product.name}</h1>
 
                             <p>{(() => {
-                                return product.price.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+                                return product.price.toLocaleString("en-US", {style:"currency", currency:"USD"});
                             })()}</p >
 
                             {starsQuantity(product.averageRating)}

@@ -174,12 +174,13 @@ export async function changeForgottenPassword(email, newPassword, recoveryCode) 
 /* --------- Admin and Master functions ------------ */
 
 export async function getUsers(page = 0) {
+   
     try {
 
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token');     
         if (!token)
             return { message: "Not's logged", status: 'error' }
-
+       
         const response = await api.get(`/auth/list-users?page=${page}&size=30`,
             {
                 headers: {

@@ -103,12 +103,12 @@ function Review({ review }) {
             <div className='flex_col justify_center'>
 
                 <Link href={`/product/details/${review.product.id}`} className={`${stylesReviews.review_link_product} flex_row items_center justify_start`}>
-                    <img className={stylesProducts.img_select} src={review.product.imgName ? `${baseURL}/product/get-img/${review.product.imgName}` : "/img/card-image.svg"} />
+                    <img className={stylesProducts.img_select} src={review.product.imgName ? `${baseURL}/product/get-img/${review.product.imgName}` : "/img/product-icon.webp"} />
                     <div>
                         <p >{review.product.category}</p>
                         <h1>{review.product.name}</h1>
                         <p>{(() => {
-                            return review.product.price.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+                            return review.product.price.toLocaleString("en-US", {style:"currency", currency:"USD"});
                         })()}</p >
                         {starsQuantity(review.product.averageRating)}
                     </div>

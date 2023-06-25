@@ -3,27 +3,27 @@ import Dropdown from '@/components/Dropdown';
 import Input from '@/components/Input';
 import Load from '@/components/Load';
 import Modal from '@/components/Modal';
+import Pagination from '@/components/Pagination';
 import { baseURL } from '@/service/api';
-import { deleteAUser, getUsers, patchAUser, findUser } from '@/service/auth_service';
+import { deleteAUser, findUser, getUsers, patchAUser } from '@/service/auth_service';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { MdDelete, MdEditSquare, MdMoreVert, MdSearch } from 'react-icons/md';
 
 import styles from '../../../../styles/pages_styles/auth.module.css';
-import Pagination from '@/components/Pagination';
-import { useRouter } from 'next/router';
 
 export default function Users() {
 
-    const [visibleModalUser, setVisivibleModalUser] = useState(false)
     const [userTemp, setUserTemp] = useState({ name: '', email: '', password: '', confirmPassword: '', role: '' })
-    const [users, setUsers] = useState([])
-    const [isLoad, setIsLoad] = useState(false)
     const [alert, setAlert] = useState({ text: '', status: 'info', isVisible: false })
     const [isVisibleConfirmModal, setIsVisibleConfirmModal] = useState(false)
+    const [visibleModalUser, setVisivibleModalUser] = useState(false)
+    const [totalPages, setTotalPages] = useState(0)
+    const [isLoad, setIsLoad] = useState(false)
+    const [users, setUsers] = useState([])
     const router = useRouter()
     const page = Number(router.query.page)
     const search = router.query.search
-    const [totalPages, setTotalPages] = useState(0)
 
     useEffect(() => {
         getListUsers()
@@ -94,7 +94,7 @@ export default function Users() {
 
     return (
         <section>
-         
+
             <div className='flex_row items_center justify_between wrap'>
                 <h1>List users</h1>
                 <Input

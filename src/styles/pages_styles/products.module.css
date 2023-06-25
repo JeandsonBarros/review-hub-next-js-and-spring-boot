@@ -130,10 +130,6 @@ input.input_file::file-selector-button {
     color: #fff;
 }
 
-/* input.input_file::file-selector-button:hover {
-    background-color: var(--primary-hover);
-} */
-
 /*------------- product details styless --------------- */
 
 .container_infos>* {

@@ -7,7 +7,23 @@ import { MdOutlineKeyboardArrowLeft, MdOutlineKeyboardArrowRight, MdOutlineAddCi
 import styles from '../styles/pages_styles/products.module.css';
 import Link from 'next/link';
 
-export default function Home() {
+export async function getStaticProps() {
+
+  const resSmartphone = await getProductByCategory("Smartphone", 0, 5)
+  const resFurniture = await getProductByCategory("Furniture", 0, 5)
+  const resHomeAppliances = await getProductByCategory("Home appliances", 0, 5)
+
+  return {
+    props: {
+      resSmartphone,
+      resFurniture,
+      resHomeAppliances
+    }
+  }
+
+}
+
+export default function Home({ resSmartphone, resFurniture, resHomeAppliances }) {
 
   const [smartphones, setSmartphones] = useState([])
   const [furnitures, setFurnitures] = useState([])
@@ -20,26 +36,28 @@ export default function Home() {
 
   async function listProducts() {
 
-    const resSmartphone = await getProductByCategory("Smartphone", 0, 5)
-    const resFurniture = await getProductByCategory("Furniture", 0, 5)
-    const resHomeAppliances = await getProductByCategory("Home appliances", 0, 5)
-
-    if (resSmartphone.data) {
-      setSmartphones(resSmartphone.data.content)
-    } else {
-      setAlert({ text: resSmartphone.message, status: resSmartphone.status, isVisible: true })
+    if (resSmartphone) {
+      if (resSmartphone.data) {
+        setSmartphones(resSmartphone.data.content)
+      } else {
+        setAlert({ text: resSmartphone.message, status: resSmartphone.status, isVisible: true })
+      }
     }
 
-    if (resFurniture.data) {
-      setFurnitures(resFurniture.data.content)
-    } else {
-      setAlert({ text: resFurniture.message, status: resFurniture.status, isVisible: true })
+    if (resFurniture) {
+      if (resFurniture.data) {
+        setFurnitures(resFurniture.data.content)
+      } else {
+        setAlert({ text: resFurniture.message, status: resFurniture.status, isVisible: true })
+      }
     }
 
-    if (resHomeAppliances.data) {
-      sethomeAppliances(resHomeAppliances.data.content)
-    } else {
-      setAlert({ text: resHomeAppliances.message, status: resHomeAppliances.status, isVisible: true })
+    if (resFurniture) {
+      if (resHomeAppliances.data) {
+        sethomeAppliances(resHomeAppliances.data.content)
+      } else {
+        setAlert({ text: resHomeAppliances.message, status: resHomeAppliances.status, isVisible: true })
+      }
     }
 
   }

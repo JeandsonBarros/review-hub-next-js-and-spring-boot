@@ -65,7 +65,8 @@ export default function Input({ type, required, placeholder, icon, value, setVal
                 </label>
 
                 <input
-                    /* step="0.01" */
+                    min="1" 
+                    step="any"
                     ref={inputRef}
                     type={typeInput}
                     value={value && value}

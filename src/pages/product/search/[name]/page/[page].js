@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import styles from '../../../../../styles/pages_styles/products.module.css';
 import ProductCard from "@/components/ProductCard";
+import Load from "@/components/Load";
 
 function ProductSearch() {
 
@@ -14,11 +15,14 @@ function ProductSearch() {
     const [totalPages, setTotalPages] = useState(0)
     const [products, setProducts] = useState([])
     const [alert, setAlert] = useState({ text: '', status: '', isVisible: false })
+    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => { if (name) searchProduct() }, [name, page])
 
     async function searchProduct() {
+        setIsLoading(true)
         const response = await findProductByName(name, page - 1, 39)
+        setIsLoading(false)
 
         if (response.data) {
             setProducts(response.data.content)
@@ -36,12 +40,12 @@ function ProductSearch() {
             </Alert>
 
             <h1 className={styles.title}>Search by: {name}</h1>
-            <div className={`${styles.list_product_category}`} >
-                {
-                    products.length > 0 &&
-                    <div className="flex_row justify_center wrap">
+            <div className={`${styles.list_product_category} flex_row justify_center wrap`} >    
+                {isLoading
+                    ? <Load />
+                    : <>
                         {products.map(product => <ProductCard css={{ margin: 10 }} key={product.id} product={product} />)}
-                    </div>
+                      </>
                 }
             </div>
 

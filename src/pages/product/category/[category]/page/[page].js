@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import styles from '../../../../../styles/pages_styles/products.module.css';
 import Pagination from "@/components/Pagination";
+import Load from "@/components/Load";
 
 function Category() {
 
@@ -14,14 +15,19 @@ function Category() {
     const category = router.query.category
     const [products, setProducts] = useState([])
     const [alert, setAlert] = useState({ text: '', status: '', isVisible: false })
+    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
         if (category) listProducts()
     }, [category, page])
 
     async function listProducts() {
+
         let categoryFind = category.charAt(0).toUpperCase() + category.slice(1);
+
+        setIsLoading(true)
         const response = await getProductByCategory(categoryFind, page - 1, 30)
+        setIsLoading(false)
 
         if (response.data) {
             setProducts(response.data.content)
@@ -29,7 +35,6 @@ function Category() {
         } else {
             setAlert({ text: response.message, status: response.status, isVisible: true })
         }
-
     }
 
     return (
@@ -40,12 +45,12 @@ function Category() {
             </Alert>
 
             <h1 className={styles.title}>{category && category.charAt(0).toUpperCase() + category.slice(1)}</h1>
-            <div className={`${styles.list_product_category}`} >
-                {
-                    products.length > 0 &&
-                    <div className="flex_row justify_center wrap">
+            <div className={`${styles.list_product_category} flex_row justify_center wrap`} >    
+                {isLoading
+                    ? <Load />
+                    : <>
                         {products.map(product => <ProductCard css={{ margin: 10 }} key={product.id} product={product} />)}
-                    </div>
+                      </>
                 }
             </div>
 

@@ -32,12 +32,12 @@ function ProductCard({ product, css }) {
             <Link href={`/product/details/${product.id}`} >
                 <Card isBordered>
                     <div className={styles.content_card}>
-                        <img src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/card-image.svg"} />
+                        <img src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/product-icon.webp"} />
                         <div>
                             <small> {product.name.length <= 70 ? product.name : product.name.slice(0, 70) + "..."}</small>
                             <h3>
                                 {(() => {
-                                    return product.price.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+                                    return product.price.toLocaleString("en-US", {style:"currency", currency:"USD"});
                                 })()}
                             </h3>
                             {starsQuantity()}
