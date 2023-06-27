@@ -4,16 +4,17 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+/* Permission code for the user to activate the account or restore the forgotten password */
 @Entity
-@Table(name = "tab_code_fo_activation_and_password_reset")
-public class CodeForActivationAndPasswordReset {
+@Table(name = "tab_permission_code")
+public class PermissionCode {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private Long id;
     @Column(nullable = false)
-    private Long recoveryCode;
+    private Long code;
     @OneToOne
     @JoinColumn(name = "user_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -29,12 +30,12 @@ public class CodeForActivationAndPasswordReset {
         this.codeExpirationTime = codeExpirationTime;
     }
 
-    public Long getRecoveryCode() {
-        return recoveryCode;
+    public Long getCode() {
+        return code;
     }
 
-    public void setRecoveryCode(Long recoveryCode) {
-        this.recoveryCode = recoveryCode;
+    public void setCode(Long code) {
+        this.code = code;
     }
 
     public User getUser() {

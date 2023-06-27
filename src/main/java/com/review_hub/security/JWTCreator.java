@@ -16,7 +16,7 @@ public class JWTCreator {
     private Long expiration/* = 3600000L*/;
 
     //Creates the String token that will be sent to the user
-    public String create(JWTObject jwtObject) {
+    public String create(JWTObject jwtObject)  {
 
         try {
 

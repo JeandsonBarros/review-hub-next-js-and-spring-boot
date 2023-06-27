@@ -26,7 +26,7 @@ public class MasterCreate implements CommandLineRunner {
                 userMaster.setPassword(encoder.encode("zorosola"));
                 userMaster.setActive(true);
                 userMaster.setRole("MASTER");
-                userMaster.setProfileImageName("1gengar.gif");
+                userMaster.setProfileImageName("1CYPHER_4.jpeg");
                 userMaster = userAuthRepository.save(userMaster);
 
                 System.out.println("======= ACCOUNT MASTER CREATED =========");

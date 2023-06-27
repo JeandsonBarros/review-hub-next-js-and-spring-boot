@@ -4,14 +4,17 @@ import com.review_hub.dtos.CodeChangeForgottenPasswordDTO;
 import com.review_hub.dtos.CodeRegistrationDTO;
 import com.review_hub.dtos.LoginDTO;
 import com.review_hub.dtos.UserDTO;
-import com.review_hub.models.CodeForActivationAndPasswordReset;
+import com.review_hub.exception.UnauthorizedExceptionsHandler;
+import com.review_hub.models.Message;
+import com.review_hub.models.PermissionCode;
 import com.review_hub.models.User;
-import com.review_hub.repository.CodeForActivationAndPasswordResetRepository;
+import com.review_hub.repository.PermissionCodeRepository;
 import com.review_hub.repository.UserRepository;
 import com.review_hub.security.JWTCreator;
 import com.review_hub.security.JWTObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.webjars.NotFoundException;
 
 import java.io.IOException;
 import java.util.Date;
@@ -40,268 +45,276 @@ public class UserService {
     @Autowired
     private JavaMailSender emailSender;
     @Autowired
-    private CodeForActivationAndPasswordResetRepository codeForActivationAndPasswordRepository;
+    private PermissionCodeRepository permissionCodeRepository;
     @Autowired
     private FileService fileService;
 
-    public ResponseEntity<Object> login(LoginDTO loginDTO) {
+    public Message login(LoginDTO loginDTO) {
 
-        try {
+        Optional<User> user = userRepository.findByEmail(loginDTO.getEmail());
 
-            Optional<User> user = userRepository.findByEmail(loginDTO.getEmail());
-
-            if (user.isPresent()) {
-
-                boolean passwordOk = encoder.matches(loginDTO.getPassword(), user.get().getPassword());
-                if (!passwordOk) {
-                    return new ResponseEntity<>("Incorrect password for email: " + loginDTO.getEmail(), HttpStatus.UNAUTHORIZED);
-                }
-
-                if (!user.get().getActive()) {
-                    return new ResponseEntity<>("The registration of this account has not been completed, use the code that was sent to the email " + loginDTO.getEmail() + " to complete the registration.", HttpStatus.UNAUTHORIZED);
-                }
-
-                JWTObject jwtObject = new JWTObject();
-                jwtObject.setSubject(user.get().getEmail());
-                jwtObject.setUserId(user.get().getId());
-                jwtObject.setIssuedAt(new Date(System.currentTimeMillis()));
-                jwtObject.setRole(user.get().getRole());
-
-                return new ResponseEntity<>(jwtCreator.create(jwtObject), HttpStatus.CREATED);
-
-            } else {
-                return new ResponseEntity<>("User with email '" + loginDTO.getEmail() + "' not found", HttpStatus.NOT_FOUND);
-            }
-
-        } catch (Exception e) {
-            return new ResponseEntity<>("Login error", HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!user.isPresent()) {
+            throw new NotFoundException("User with email '" + loginDTO.getEmail() + "' not found");
         }
+
+        boolean passwordOk = encoder.matches(loginDTO.getPassword(), user.get().getPassword());
+        if (!passwordOk) {
+            throw new UnauthorizedExceptionsHandler("Incorrect password for email: " + loginDTO.getEmail());
+        }
+
+        if (!user.get().getActive()) {
+            throw new UnauthorizedExceptionsHandler("The registration of this account has not been completed, use the code that was sent to the email " + loginDTO.getEmail() + " to complete the registration.");
+        }
+
+        JWTObject jwtObject = new JWTObject();
+        jwtObject.setSubject(user.get().getEmail());
+        jwtObject.setUserId(user.get().getId());
+        jwtObject.setIssuedAt(new Date(System.currentTimeMillis()));
+        jwtObject.setRole(user.get().getRole());
+
+        Message message = new Message(
+                HttpStatus.CREATED.value(),
+                new Date(),
+                jwtCreator.create(jwtObject),
+                "JWT token to be sent in the header of requests that need authentication."
+        );
+
+        return message;
+
     }
 
-    public ResponseEntity<Object> listUsers(Pageable pageable) {
-        try {
-            return new ResponseEntity<>(userRepository.findAll(pageable), HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error listing users", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public Page<User> listUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
-    public ResponseEntity<Object> findUser(String name, Pageable pageable) {
-        try {
-            return new ResponseEntity<>(userRepository.findByNameContaining(name, pageable), HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error fetching user", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public Page<User> findUser(String name, Pageable pageable) {
+        return userRepository.findByNameContaining(name, pageable);
     }
 
-    public ResponseEntity<Object> createUser(UserDTO userDTO) {
+    public Message createUser(UserDTO userDTO) {
+
+        Optional<User> userIsPresent = userRepository.findByEmail(userDTO.getEmail());
+        if (userIsPresent.isPresent() && userIsPresent.get().getActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "There is already a user with the email " + userDTO.getEmail());
+        } else if (userIsPresent.isPresent() && !userIsPresent.get().getActive()) {
+            userRepository.delete(userIsPresent.get());
+        }
 
         User user = new User();
 
-        try {
+        BeanUtils.copyProperties(userDTO, user);
+        user.setRole("USER");
+        user.setPassword(encoder.encode(userDTO.getPassword()));
+        user = userRepository.save(user);
 
-            Optional<User> userIsPresent = userRepository.findByEmail(userDTO.getEmail());
-            if (userIsPresent.isPresent() && userIsPresent.get().getActive())
-                return new ResponseEntity<>("There is already a user with the email " + userDTO.getEmail(), HttpStatus.BAD_REQUEST);
-            if (userIsPresent.isPresent() && !userIsPresent.get().getActive())
-                userRepository.delete(userIsPresent.get());
+        PermissionCode permissionCode = generationPermissionCode(user.getEmail());
 
-            BeanUtils.copyProperties(userDTO, user);
-            user.setRole("USER");
-            user.setPassword(encoder.encode(userDTO.getPassword()));
-            user = userRepository.save(user);
+        boolean asSendEmail = sendEmail(
+                userDTO.getEmail(),
+                "Product review_hub - activation code",
+                "Your account activation code valid for 15 minutes is: " + permissionCode.getCode());
 
-            return sendEmailWithCode(userDTO.getEmail(), "Product review_hub - activation code", "Your account activation code valid for 15 minutes is: ");
+        if (asSendEmail) {
 
-        } catch (Exception e) {
+            Message message = new Message(
+                    HttpStatus.CREATED.value(),
+                    new Date(),
+                    "Use the code that was sent to the email " + user.getEmail() + "to complete your registration.",
+                    "Use the code that was sent to the email " + user.getEmail() + "to complete your registration."
+            );
+            return message;
+
+        } else {
             userRepository.delete(user);
-            return new ResponseEntity<>("Error when registering.", HttpStatus.INTERNAL_SERVER_ERROR);
+            permissionCodeRepository.delete(permissionCode);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to send code to email " + userDTO.getEmail());
         }
     }
 
-    public ResponseEntity<Object> completeRegistrationByCode(CodeRegistrationDTO codeRegistrationDTO) {
+    public Message completeRegistrationByCode(CodeRegistrationDTO codeRegistrationDTO) {
 
-        try {
+        Optional<User> user = userRepository.findByEmail(codeRegistrationDTO.getEmail());
 
-            Optional<User> user = userRepository.findByEmail(codeRegistrationDTO.getEmail());
+        if (!user.isPresent()) {
+            throw new NotFoundException("There is not even an addendum record for the email " + codeRegistrationDTO.getEmail());
+        }
+        if (user.get().getActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Completion of account registration has already been completed previously " + codeRegistrationDTO.getEmail());
+        }
 
-            if (!user.isPresent())
-                return new ResponseEntity<>("There is not even an addendum record for the email " + codeRegistrationDTO.getEmail(), HttpStatus.NOT_FOUND);
+        Optional<PermissionCode> activationCode = permissionCodeRepository.findByCodeAndUser(codeRegistrationDTO.getCode(), user.get());
+        if (!activationCode.isPresent()) {
+            throw new NotFoundException("Invalid code or there is no activation code for the email: " + codeRegistrationDTO.getEmail());
+        }
+        if (System.currentTimeMillis() > activationCode.get().getCodeExpirationTime()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Code entered is expired");
+        }
 
-            if (user.get().getActive())
-                return new ResponseEntity<>("Completion of account registration has already been completed previously " + codeRegistrationDTO.getEmail(), HttpStatus.BAD_REQUEST);
+        user.get().setActive(true);
+        userRepository.save(user.get());
+        permissionCodeRepository.delete(activationCode.get());
 
-            Optional<CodeForActivationAndPasswordReset> activationCode = codeForActivationAndPasswordRepository.findByRecoveryCodeAndUser(codeRegistrationDTO.getCode(), user.get());
-            if (!activationCode.isPresent())
-                return new ResponseEntity<>("There is no activation code for the email: " + codeRegistrationDTO.getEmail(), HttpStatus.NOT_FOUND);
+        Message message = new Message(
+                HttpStatus.OK.value(),
+                new Date(),
+                "JWT token to be sent in the header of requests that need authentication.",
+                "It is now possible to log in to make requests that need authentication."
+        );
 
-            if (System.currentTimeMillis() > activationCode.get().getCodeExpirationTime())
-                return new ResponseEntity<>("Code entered is expired", HttpStatus.BAD_REQUEST);
+        return message;
 
-            if (Objects.equals(codeRegistrationDTO.getCode(), activationCode.get().getRecoveryCode())) {
-                user.get().setActive(true);
-                userRepository.save(user.get());
-                codeForActivationAndPasswordRepository.delete(activationCode.get());
-                return new ResponseEntity<>("Registration completed successfully", HttpStatus.OK);
+    }
+
+    public User updateUser(UserDTO userDTO) {
+
+        User userLogged = getUserDataLogged();
+
+        if (userDTO.getEmail() != null && !userDTO.getEmail().isEmpty()) {
+            if (userRepository.findByEmail(userDTO.getEmail()).isPresent() && !userDTO.getEmail().equals(userLogged.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This email is unavailable");
             } else {
-                return new ResponseEntity<>("Invalid code", HttpStatus.BAD_REQUEST);
+                userLogged.setEmail(userDTO.getEmail());
             }
-
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error completing registration", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        if (userDTO.getName() != null && !userDTO.getName().isEmpty()) {
+            userLogged.setName(userDTO.getName());
+        }
+        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+            userLogged.setPassword(encoder.encode(userDTO.getPassword()));
+        }
+        if (userDTO.getProfileImage() != null) {
 
-    }
-
-    public ResponseEntity<Object> updateUser(UserDTO userDTO) {
-        try {
-
-            User userLogged = getUserDataLogged();
-
-            if (userDTO.getEmail() != null && !userDTO.getEmail().isEmpty()) {
-                if (userRepository.findByEmail(userDTO.getEmail()).isPresent() && !userDTO.getEmail().equals(userLogged.getEmail())) {
-                    return new ResponseEntity<>("This email is unavailable", HttpStatus.BAD_REQUEST);
-                } else {
-                    userLogged.setEmail(userDTO.getEmail());
+            if (userLogged.getProfileImageName() != null && !userLogged.getProfileImageName().isEmpty()) {
+                try {
+                    fileService.delete("uploads/img_user/" + userLogged.getProfileImageName());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting old image");
                 }
             }
-            if (userDTO.getName() != null && !userDTO.getName().isEmpty())
-                userLogged.setName(userDTO.getName());
 
-            if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty())
-                userLogged.setPassword(encoder.encode(userDTO.getPassword()));
-
-            if (userDTO.getProfileImage() != null) {
-                if (userLogged.getProfileImageName() != null && !userLogged.getProfileImageName().isEmpty())
-                    fileService.delete("uploads/img_user/" + userLogged.getProfileImageName());
-
+            try {
                 String fileName = fileService.save(userDTO.getProfileImage(), "img_user");
                 userLogged.setProfileImageName(fileName);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error saving new image");
             }
 
-            userRepository.save(userLogged);
-
-            return new ResponseEntity<>("Successfully updated", HttpStatus.OK);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error updating user image", HttpStatus.INTERNAL_SERVER_ERROR);
-        }  catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error updating account", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        return userRepository.save(userLogged);
+
     }
 
-    public ResponseEntity<Object> deleteAccount() {
-        try {
-            if (getUserDataLogged().getProfileImageName() != null && !getUserDataLogged().getProfileImageName().isEmpty())
+    public void deleteAccount() {
+
+        if (getUserDataLogged().getProfileImageName() != null && !getUserDataLogged().getProfileImageName().isEmpty()) {
+            try {
                 fileService.delete("uploads/img_user/" + getUserDataLogged().getProfileImageName());
-
-            userRepository.delete(getUserDataLogged());
-            return new ResponseEntity<>("account deleted", HttpStatus.OK);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error deleting user image", HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error deleting account", HttpStatus.INTERNAL_SERVER_ERROR);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting image");
+            }
         }
+
+        userRepository.delete(getUserDataLogged());
+
     }
 
     /* admin or master permission is required */
-    public ResponseEntity<Object> deleteAUser(String email) {
-        try {
+    public void deleteAUser(String email) {
 
-            Optional<User> user = userRepository.findByEmail(email);
+        Optional<User> user = userRepository.findByEmail(email);
 
-            if (!user.isPresent())
-                return new ResponseEntity<>("User with email " + email + " not found ", HttpStatus.NOT_FOUND);
+        if (!user.isPresent()) {
+            throw new NotFoundException("User with email " + email + " not found ");
+        }
 
-            if (getUserDataLogged().getRole().equals("MASTER") && user.get().getRole().equals("MASTER")) {
-                return new ResponseEntity<>("A master user cannot delete another master user.", HttpStatus.BAD_REQUEST);
-            } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("MASTER")) {
-                return new ResponseEntity<>("A admin user cannot delete another master user.", HttpStatus.BAD_REQUEST);
-            } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("ADMIN")) {
-                return new ResponseEntity<>("A admin user cannot delete another admin user.", HttpStatus.NOT_FOUND);
-            }
-            if (user.get().getProfileImageName() != null && !user.get().getProfileImageName().isEmpty())
+        if (getUserDataLogged().getRole().equals("MASTER") && user.get().getRole().equals("MASTER")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A master user cannot delete another master user.");
+        } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("MASTER")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A admin user cannot delete another master user.");
+        } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A admin user cannot delete another admin user.");
+        }
+
+        if (user.get().getProfileImageName() != null && !user.get().getProfileImageName().isEmpty()) {
+            try {
                 fileService.delete("uploads/img_user/" + user.get().getProfileImageName());
-
-            userRepository.delete(user.get());
-            return new ResponseEntity<>("account with email " + email + " deleted", HttpStatus.OK);
-
-        }  catch (IOException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error deleting user image", HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error deleting user", HttpStatus.INTERNAL_SERVER_ERROR);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting image");
+            }
         }
+
+        userRepository.delete(user.get());
+
     }
 
     /* admin or master permission is required */
-    public ResponseEntity<Object> updateAUser(String email, UserDTO userDTO) {
-        try {
+    public User updateAUser(String email, UserDTO userDTO) {
 
-            Optional<User> user = userRepository.findByEmail(email);
+        Optional<User> user = userRepository.findByEmail(email);
 
-            if (!user.isPresent())
-                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+        if (!user.isPresent()) {
+            throw new NotFoundException("Email user " + email + " not found");
+        }
 
-            if (getUserDataLogged().getRole().equals("MASTER") && user.get().getRole().equals("MASTER")) {
-                return new ResponseEntity<>("A master user cannot update another master user.", HttpStatus.NOT_FOUND);
-            } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("MASTER")) {
-                return new ResponseEntity<>("A admin user cannot update another master user.", HttpStatus.NOT_FOUND);
-            } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("ADMIN")) {
-                return new ResponseEntity<>("A admin user cannot update another admin user.", HttpStatus.NOT_FOUND);
+        if (getUserDataLogged().getRole().equals("MASTER") && user.get().getRole().equals("MASTER")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A master user cannot update another master user.");
+        } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("MASTER")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A admin user cannot update another master user.");
+        } else if (getUserDataLogged().getRole().equals("ADMIN") && user.get().getRole().equals("ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A admin user cannot update another admin user.");
+        }
+
+        if (userDTO.getEmail() != null && !userDTO.getEmail().isEmpty()) {
+
+            Optional<User> exitUser = userRepository.findByEmail(userDTO.getEmail());
+
+            if (exitUser.isPresent() && !exitUser.get().getEmail().equals(email)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This email is unavailable");
+            } else {
+                user.get().setEmail(userDTO.getEmail());
             }
+        }
+        if (userDTO.getName() != null && !userDTO.getName().isEmpty()) {
+            user.get().setName(userDTO.getName());
+        }
+        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+            user.get().setPassword(encoder.encode(userDTO.getPassword()));
+        }
+        if ((userDTO.getRole() != null && !userDTO.getRole().isEmpty())) {
+            if (getUserDataLogged().getRole().equals("MASTER")) {
+                user.get().setRole(userDTO.getRole());
+            } else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only a master can change the authority of another account.");
+            }
+        }
+        if (userDTO.getProfileImage() != null) {
 
-            if (userDTO.getEmail() != null && !userDTO.getEmail().isEmpty()) {
-
-                Optional<User> exitUser = userRepository.findByEmail(userDTO.getEmail());
-
-                if (exitUser.isPresent() && !exitUser.get().getEmail().equals(email)) {
-                    return new ResponseEntity<>("This email is unavailable", HttpStatus.BAD_REQUEST);
-                } else {
-                    user.get().setEmail(userDTO.getEmail());
+            if (user.get().getProfileImageName() != null && !user.get().getProfileImageName().isEmpty()) {
+                try {
+                    fileService.delete("uploads/img_user/" + user.get().getProfileImageName());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting old image");
                 }
             }
 
-            if (userDTO.getName() != null && !userDTO.getName().isEmpty())
-                user.get().setName(userDTO.getName());
-
-            if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty())
-                user.get().setPassword(encoder.encode(userDTO.getPassword()));
-
-            if ((userDTO.getRole() != null && !userDTO.getRole().isEmpty())) {
-                if (getUserDataLogged().getRole().equals("MASTER"))
-                    user.get().setRole(userDTO.getRole());
-                else
-                    return new ResponseEntity<>("Only a master can change the authority of another account.", HttpStatus.NOT_FOUND);
-            }
-
-            if (userDTO.getProfileImage() != null) {
-                if (user.get().getProfileImageName() != null && !user.get().getProfileImageName().isEmpty())
-                    fileService.delete("uploads/img_user/" + user.get().getProfileImageName());
-
+            try {
                 String fileName = fileService.save(userDTO.getProfileImage(), "img_user");
                 user.get().setProfileImageName(fileName);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error saving new image");
             }
 
-            userRepository.save(user.get());
-
-            return new ResponseEntity<>("Successfully updated", HttpStatus.OK);
-
-        }  catch (IOException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error updating user image", HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error updating user", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        return userRepository.save(user.get());
+
     }
 
     public User getUserDataLogged() {
@@ -310,70 +323,98 @@ public class UserService {
         return userEntity.get();
     }
 
-    public ResponseEntity<Object> sendEmailForgottenPassword(String email) {
-        return sendEmailWithCode(email, "Product review_hub - Password reset code", "Your password reset code valid for 15 minutes is: ");
-    }
+    public Message sendEmailForgottenPassword(String email) {
 
-    public ResponseEntity<Object> changeForgottenPassword(CodeChangeForgottenPasswordDTO changeForgottenPasswordDTO) {
+        PermissionCode permissionCode = generationPermissionCode(email);
+        boolean asSendEmail = sendEmail(
+                email,
+                "Product review_hub - Password reset code",
+                "Your password reset code valid for 15 minutes is: " + permissionCode.getCode());
 
-        try {
+        if (asSendEmail) {
 
-            Optional<User> user = userRepository.findByEmail(changeForgottenPasswordDTO.getEmail());
-            if (!user.isPresent())
-                return new ResponseEntity<>("User with email not found: " + changeForgottenPasswordDTO.getEmail(), HttpStatus.NOT_FOUND);
+            Message message = new Message(
+                    HttpStatus.CREATED.value(),
+                    new Date(),
+                    "Use the code that was sent to the email " + email + "to complete your registration.",
+                    "The code that was sent to the email must be used through paht /api/auth/forgotten-password/change-password with the code, email and new password from the request body."
+            );
 
-            Optional<CodeForActivationAndPasswordReset> recoveryCodeAndEmail = codeForActivationAndPasswordRepository.findByRecoveryCodeAndUser(changeForgottenPasswordDTO.getRecoveryCode(), user.get());
-            if (!recoveryCodeAndEmail.isPresent())
-                return new ResponseEntity<>("There is no password recovery code for the email: " + changeForgottenPasswordDTO.getEmail(), HttpStatus.NOT_FOUND);
+            return message;
 
-            if (System.currentTimeMillis() > recoveryCodeAndEmail.get().getCodeExpirationTime())
-                return new ResponseEntity<>("Code entered is expired", HttpStatus.BAD_REQUEST);
-
-            user.get().setPassword(encoder.encode(changeForgottenPasswordDTO.getNewPassword()));
-            userRepository.save(user.get());
-            codeForActivationAndPasswordRepository.delete(recoveryCodeAndEmail.get());
-
-            return new ResponseEntity<>("Updated password", HttpStatus.OK);
-
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } else {
+            permissionCodeRepository.delete(permissionCode);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to send code to email " + email);
         }
 
     }
 
-    /* It generates a code to activate the account or reset the password and send it to the user's email. */
-    public ResponseEntity<Object> sendEmailWithCode(String email, String subject, String text) {
+    public Message changeForgottenPassword(CodeChangeForgottenPasswordDTO changeForgottenPasswordDTO) {
 
-        CodeForActivationAndPasswordReset codeEntity = new CodeForActivationAndPasswordReset();
+        Optional<User> user = userRepository.findByEmail(changeForgottenPasswordDTO.getEmail());
+        if (!user.isPresent()) {
+            throw new NotFoundException("User with email not found: " + changeForgottenPasswordDTO.getEmail());
+        }
+        Optional<PermissionCode> recoveryCodeAndEmail = permissionCodeRepository.findByCodeAndUser(changeForgottenPasswordDTO.getRecoveryCode(), user.get());
+        if (!recoveryCodeAndEmail.isPresent()) {
+            throw new NotFoundException("There is no password recovery code for the email: " + changeForgottenPasswordDTO.getEmail());
+        }
+        if (System.currentTimeMillis() > recoveryCodeAndEmail.get().getCodeExpirationTime()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Code entered is expired");
+        }
+
+        user.get().setPassword(encoder.encode(changeForgottenPasswordDTO.getNewPassword()));
+        userRepository.save(user.get());
+        permissionCodeRepository.delete(recoveryCodeAndEmail.get());
+
+        Message message = new Message(
+                HttpStatus.OK.value(),
+                new Date(),
+                "Updated password",
+                "Password successfully updated, now it is possible to login to make requests that need authentication."
+        );
+
+        return message;
+
+    }
+
+    private PermissionCode generationPermissionCode(String email) {
+
+        PermissionCode permissionCode = new PermissionCode();
+
+        Optional<User> user = userRepository.findByEmail(email);
+        if (!user.isPresent())
+            throw new NotFoundException("Unable to find a user with the email: " + email);
+
+        Optional<PermissionCode> codeIsPresent = permissionCodeRepository.findByUser(user.get());
+        codeIsPresent.ifPresent(codeForActivationAndPasswordReset -> permissionCodeRepository.delete(codeForActivationAndPasswordReset));
+
+        Long generatedCode = ThreadLocalRandom.current().nextLong(1000000, 2000000);
+        /*permissionCode.setCode(generatedCode);*/
+        permissionCode.setUser(user.get());
+        permissionCode.setCodeExpirationTime(System.currentTimeMillis() + 900000);
+        permissionCode = permissionCodeRepository.save(permissionCode);
+
+        return permissionCode;
+
+    }
+
+    public boolean sendEmail(String email, String subject, String text) {
 
         try {
-
-            Optional<User> user = userRepository.findByEmail(email);
-            if (!user.isPresent())
-                return new ResponseEntity<>("Unable to find a user with the email: " + email, HttpStatus.NOT_FOUND);
-
-            Optional<CodeForActivationAndPasswordReset> codeIsPresent = codeForActivationAndPasswordRepository.findByUser(user.get());
-            codeIsPresent.ifPresent(codeForActivationAndPasswordReset -> codeForActivationAndPasswordRepository.delete(codeForActivationAndPasswordReset));
-
-            Long generatedCode = ThreadLocalRandom.current().nextLong(1000000, 2000000);
-            codeEntity.setRecoveryCode(generatedCode);
-            codeEntity.setUser(user.get());
-            codeEntity.setCodeExpirationTime(System.currentTimeMillis() + 900000);
-            codeEntity = codeForActivationAndPasswordRepository.save(codeEntity);
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom("jeandson.developer@gmail.com");
             message.setTo(email);
             message.setSubject(subject);
-            message.setText(text + generatedCode);
+            message.setText(text);
             emailSender.send(message);
 
-            return new ResponseEntity<>("Use the code that was sent to the email " + email + ".", HttpStatus.CREATED);
+            return true;
 
         } catch (Exception e) {
-            codeForActivationAndPasswordRepository.delete(codeEntity);
             e.printStackTrace();
-            return new ResponseEntity<>("Unable to send code to email " + email, HttpStatus.INTERNAL_SERVER_ERROR);
+            return false;
         }
 
     }

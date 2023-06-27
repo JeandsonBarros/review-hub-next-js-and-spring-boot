@@ -56,7 +56,7 @@ To run the project, you need to pass the following information in application.pr
         <td>User register</td>
         <td>The user informs the name, email and password, if the data entered are correct, the registration is made and an email with a code for the activation of the account is sent to the informed email. If data is missing, the system returns a message informing the error.
 Note: Requirement 03 is required to activate the account.</td>
-        <td>/api/auth/register</td>
+        <td>/api/auth/start-registration</td>
         <td>POST</td>
         <td>Permit All</td>
     </tr>
@@ -236,38 +236,54 @@ Note: Requirement 03 is required to activate the account.</td>
 <tbody>
 <tr>
         <td>20</td>
-        <td>Get reviews</td>
-        <td>The product and its reviews are deleted, the product id must be informed along the way. If something is wrong in the request, the api will return a message describing the error.</td>
-        <td>/api/review/{productId}</td>
+        <td>Get all reviews or reviews by note</td>
+        <td>Lists all reviews, or lists reviews by grade, the grade must be entered in the path.</td>
+        <td>/api/review/</td>
         <td>GET</td>
         <td>Permit All</td>
     </tr>
 <tr>
         <td>21</td>
-        <td>Get user Reviews</td>
+        <td>Get a review by id</td>
+        <td>Return a review by id, the id must be entered in the path.</td>
+        <td>/api/review/{id}</td>
+        <td>GET</td>
+        <td>Permit All</td>
+    </tr>
+<tr>
+        <td>22</td>
+        <td>Get reviews by product id</td>
+        <td>Return reviews by product id,the product id must be informed along the way,  the api will return a message describing the error.</td>
+        <td>/api/review/{productId}</td>
+        <td>GET</td>
+        <td>Permit All</td>
+    </tr>
+<tr>
+        <td>23</td>
+        <td>Get product review statistics</td>
+        <td>Return statistics of reviews by product</td>
+        <td>/api/review/{productId}/statistics</td>
+        <td>GET</td>
+        <td>Permit All</td>
+    </tr>
+<tr>
+        <td>24</td>
+        <td>Get user reviews</td>
         <td>Returns a list of reviews made by the authenticated user.</td>
         <td>/api/review/user-reviews</td>
         <td>GET</td>
         <td>Authenticated</td>
     </tr>
 <tr>
-        <td>22</td>
-        <td>Get user a review by product</td>
-        <td>Obtaining a review made by the user through the product id, if the product does not exist or the user has not yet reviewed the product, the 404 error will be returned. The product id must be informed in the path.</td>
-        <td>/api/review/user-review-by-product/{productId}</td>
-        <td>GET</td>
-        <td>Authenticated</td>
-    </tr>
-<tr>
-        <td>23</td>
-        <td>Get reviews</td>
-        <td>The product and its reviews are deleted, the product id must be informed along the way. If something is wrong in the request, the api will return a message describing the error.</td>
+        <td>25</td>
+        <td>Get a review by product id</td>
+        <td>Returns a review made by the user for a product ID, the product ID must be entered along the way. If something is wrong with the request, the API will return a message describing the error.</td>
         <td>/api/review/user-review-by-product/{productId}</td>
         <td>GET</td>
         <td>Permit All</td>
     </tr>
 <tr>
-        <td>24</td>
+        <td>26</td>
         <td>Create a review</td>
         <td>The user registering a review of a product, in the body of the request must have the product id and a note that can be from 1 to 5, a comment is not mandatory, but, if the comment is informed, it must have a maximum of 570 characters. If something is wrong, the api will return a message describing the error.</td>
         <td>/api/review/</td>
@@ -275,7 +291,7 @@ Note: Requirement 03 is required to activate the account.</td>
         <td>Authenticated</td>
     </tr>
 <tr>
-        <td>25</td>
+        <td>27</td>
         <td>Update a review</td>
         <td>The user updates a review already made of a product, the body of the request must have the product id and a score that can be from 1 to 5, a comment is not mandatory, but if the comment is informed, it must have a maximum of 570 characters, the review id must be informed in the path. If something is wrong, the api will return a message describing the error.</td>
         <td>/api/review/</td>
@@ -283,13 +299,14 @@ Note: Requirement 03 is required to activate the account.</td>
         <td>Authenticated</td>
     </tr>
 <tr>
-        <td>26</td>
+        <td>28</td>
         <td>Delete a reviews</td>
-        <td>The user deletes a review he made of a product, the id of the review must be informed in the path. If something is wrong, the api will return a message describing the error.</td>
+        <td>The user delete a review he made of a product, the id of the review must be informed in the path. If something is wrong, the api will return a message describing the error.</td>
         <td>/api/review/{productId}</td>
         <td>DELETE</td>
         <td>Authenticated</td>
     </tr>
+
 </tbody>
 </table>
 

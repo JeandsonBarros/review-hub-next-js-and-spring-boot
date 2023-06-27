@@ -19,9 +19,9 @@ public class Product {
     private String description;
     @Column(nullable = false)
     private String category;
-    private Double averageRating = 0.0;
+    private Double averageReviews = 0.0;
     private Double sumOfGrades = 0.0;
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String imgName;
     @OneToMany
     private List<Review> reviews;
@@ -42,12 +42,12 @@ public class Product {
         this.sumOfGrades = sumOfGrades;
     }
 
-    public Double getAverageRating() {
-        return averageRating;
+    public Double getAverageReviews() {
+        return averageReviews;
     }
 
-    public void setAverageRating(Double averageRating) {
-        this.averageRating = averageRating;
+    public void setAverageReviews(Double averageReviews) {
+        this.averageReviews = averageReviews;
     }
 
     public Long getId() {
@@ -98,7 +98,7 @@ public class Product {
                 ", price=" + price +
                 ", description='" + description + '\'' +
                 ", category='" + category + '\'' +
-                ", averageRating=" + averageRating +
+                ", averageReviews=" + averageReviews +
                 ", sumOfGrades=" + sumOfGrades +
                 ", imgName='" + imgName + '\'' +
                 ", reviews=" + reviews +

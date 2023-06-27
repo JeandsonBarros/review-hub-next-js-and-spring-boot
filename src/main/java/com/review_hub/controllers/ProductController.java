@@ -1,15 +1,19 @@
 package com.review_hub.controllers;
 
 import com.review_hub.dtos.ProductDTO;
+import com.review_hub.models.Product;
 import com.review_hub.services.FileService;
 import com.review_hub.services.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -33,51 +37,48 @@ public class ProductController {
     @Autowired
     private FileService fileService;
 
+    @ApiResponse(responseCode = "200")
     @Operation(summary = "Get products | Authority: Permit All")
     @GetMapping
-    public ResponseEntity<Object> getProducts(@PageableDefault(page = 0, size = 30, sort = "name") Pageable pageable, @RequestParam(required = false) String name, @RequestParam(required = false) String category) {
+    public ResponseEntity<Page<Product>> getProducts(@PageableDefault(page = 0, size = 30, sort = "name") Pageable pageable, @RequestParam(required = false) String name, @RequestParam(required = false) String category) {
 
         if (name != null && category != null)
-            return productService.findByNameContainingAndCategoryContaining(name, category, pageable);
+            return new ResponseEntity<>(productService.findByNameContainingAndCategoryContaining(name, category, pageable), HttpStatus.OK);
         else if (category != null)
-            return productService.findByCategory(category, pageable);
+            return new ResponseEntity<>(productService.findByCategory(category, pageable), HttpStatus.OK);
         else if (name != null)
-            return productService.findByNameContaining(name, pageable);
+            return new ResponseEntity<>(productService.findByNameContaining(name, pageable), HttpStatus.OK);
 
-        return productService.getAllProducts(pageable);
+        return new ResponseEntity<>(productService.getAllProducts(pageable), HttpStatus.OK);
     }
 
+    @ApiResponse(responseCode = "200")
     @Operation(summary = "Get product | Authority: Permit All")
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getProduct(@PathVariable Long id) {
-        return productService.getProduct(id);
+    public ResponseEntity<Product> getProduct(@PathVariable Long id) {
+        return new ResponseEntity<>(productService.getProduct(id), HttpStatus.OK);
     }
 
+    @ApiResponse(responseCode = "201")
     @Operation(summary = "Register product | Authority: ADMIN, MASTER")
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE,})
-    public ResponseEntity<Object> postProduct(@Valid @RequestBody ProductDTO productDTO, BindingResult result) {
-
-        if (result.hasErrors())
-            return new ResponseEntity<>(result.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.toList()), HttpStatus.BAD_REQUEST);
-
-        return productService.saveNewProduct(productDTO);
+    public ResponseEntity<Product> postProduct(@Valid @RequestBody ProductDTO productDTO) {
+        return new ResponseEntity<>(productService.saveNewProduct(productDTO), HttpStatus.CREATED);
     }
 
+    @ApiResponse(responseCode = "201")
     @Operation(
             summary = "Multipart form  data to register product | Authority: ADMIN, MASTER",
             description = "This method was created just file upload"
     )
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<Object> postFormProduct(@Valid ProductDTO productDTO, BindingResult result) {
-
-        if (result.hasErrors())
-            return new ResponseEntity<>(result.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.toList()), HttpStatus.BAD_REQUEST);
-
-        return productService.saveNewProduct(productDTO);
+    public ResponseEntity<Product> postFormProduct(@Valid ProductDTO productDTO) {
+        return new ResponseEntity<>(productService.saveNewProduct(productDTO), HttpStatus.CREATED);
     }
 
+    @ApiResponse(responseCode = "200")
     @GetMapping(value = "/get-img/{fileName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Object> getFile(@PathVariable String fileName) {
         try {
@@ -92,48 +93,45 @@ public class ProductController {
         }
     }
 
+    @ApiResponse(responseCode = "200")
     @Operation(summary = "Partially update product | Authority: ADMIN, MASTER")
     @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> putProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO productDTO, BindingResult result) {
-
-        if (result.hasErrors())
-            return new ResponseEntity<>(result.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.toList()), HttpStatus.BAD_REQUEST);
-
-        return productService.updateProduct(productDTO, id);
+    public ResponseEntity<Product> putProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO productDTO) {
+        return new ResponseEntity<>(productService.updateProduct(productDTO, id), HttpStatus.OK);
     }
 
+    @ApiResponse(responseCode = "200")
     @Operation(summary = "Partially update product | Authority: ADMIN, MASTER")
     @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Object> putFormProduct(@PathVariable Long id, @Valid ProductDTO productDTO, BindingResult result) {
-
-        if (result.hasErrors())
-            return new ResponseEntity<>(result.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.toList()), HttpStatus.BAD_REQUEST);
-
-        return productService.updateProduct(productDTO, id);
+    public ResponseEntity<Product> putFormProduct(@PathVariable Long id, @Valid ProductDTO productDTO) {
+        return new ResponseEntity<>(productService.updateProduct(productDTO, id), HttpStatus.OK);
     }
 
+    @ApiResponse(responseCode = "200")
     @Operation(summary = "Fully update product | Authority: ADMIN, MASTER")
     @SecurityRequirement(name = "Bearer Authentication")
     @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> pathProduct(@PathVariable Long id, @RequestBody ProductDTO productDTO) {
-
-        return productService.updateProduct(productDTO, id);
+    public ResponseEntity<Product> pathProduct(@PathVariable Long id, @RequestBody ProductDTO productDTO) {
+        return new ResponseEntity<>(productService.updateProduct(productDTO, id), HttpStatus.OK);
     }
 
+    @ApiResponse(responseCode = "200")
     @Operation(summary = "Fully update product | Authority: ADMIN, MASTER")
     @SecurityRequirement(name = "Bearer Authentication")
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Object> pathProductForm(@PathVariable Long id,@Valid ProductDTO productDTO, BindingResult result) {
-        return productService.updateProduct(productDTO, id);
+    public ResponseEntity<Product> pathProductForm(@PathVariable Long id, @Valid ProductDTO productDTO, BindingResult result) {
+        return new ResponseEntity<>(productService.updateProduct(productDTO, id), HttpStatus.OK);
     }
 
+    @ApiResponse(responseCode = "204")
     @Operation(summary = "Delete product | Authority: ADMIN, MASTER")
     @SecurityRequirement(name = "Bearer Authentication")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteProduct(@PathVariable Long id) {
-        return productService.deleteProduct(id);
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 }
