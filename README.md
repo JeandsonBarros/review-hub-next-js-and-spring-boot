@@ -254,7 +254,7 @@ Note: Requirement 03 is required to activate the account.</td>
         <td>22</td>
         <td>Get reviews by product id</td>
         <td>Return reviews by product id,the product id must be informed along the way,  the api will return a message describing the error.</td>
-        <td>/api/review/{productId}</td>
+        <td>/api/review/product/{productId}</td>
         <td>GET</td>
         <td>Permit All</td>
     </tr>
@@ -262,7 +262,7 @@ Note: Requirement 03 is required to activate the account.</td>
         <td>23</td>
         <td>Get product review statistics</td>
         <td>Return statistics of reviews by product</td>
-        <td>/api/review/{productId}/statistics</td>
+        <td>/api/review/product/{productId}/statistics</td>
         <td>GET</td>
         <td>Permit All</td>
     </tr>
