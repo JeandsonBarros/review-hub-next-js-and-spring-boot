@@ -127,7 +127,7 @@ public class UserService {
         } else {
             userRepository.delete(user);
             permissionCodeRepository.delete(permissionCode);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to send code to email " + userDTO.getEmail());
+            throw new RuntimeException("Unable to send code to email " + userDTO.getEmail());
         }
     }
 
@@ -189,7 +189,7 @@ public class UserService {
                     fileService.delete("uploads/img_user/" + userLogged.getProfileImageName());
                 } catch (IOException e) {
                     e.printStackTrace();
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting old image");
+                    throw new RuntimeException("Error deleting old image");
                 }
             }
 
@@ -198,7 +198,7 @@ public class UserService {
                 userLogged.setProfileImageName(fileName);
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error saving new image");
+                throw new RuntimeException("Error saving new image");
             }
 
         }
@@ -214,7 +214,7 @@ public class UserService {
                 fileService.delete("uploads/img_user/" + getUserDataLogged().getProfileImageName());
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting image");
+                throw new RuntimeException("Error deleting image");
             }
         }
 
@@ -244,7 +244,7 @@ public class UserService {
                 fileService.delete("uploads/img_user/" + user.get().getProfileImageName());
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting image");
+                throw new RuntimeException("Error deleting image");
             }
         }
 
@@ -299,7 +299,7 @@ public class UserService {
                     fileService.delete("uploads/img_user/" + user.get().getProfileImageName());
                 } catch (IOException e) {
                     e.printStackTrace();
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting old image");
+                    throw new RuntimeException("Error deleting old image");
                 }
             }
 
@@ -308,7 +308,7 @@ public class UserService {
                 user.get().setProfileImageName(fileName);
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error saving new image");
+                throw new RuntimeException("Error saving new image");
             }
 
         }
@@ -344,7 +344,7 @@ public class UserService {
 
         } else {
             permissionCodeRepository.delete(permissionCode);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to send code to email " + email);
+            throw new RuntimeException("Unable to send code to email " + email);
         }
 
     }
@@ -390,7 +390,7 @@ public class UserService {
         codeIsPresent.ifPresent(codeForActivationAndPasswordReset -> permissionCodeRepository.delete(codeForActivationAndPasswordReset));
 
         Long generatedCode = ThreadLocalRandom.current().nextLong(1000000, 2000000);
-        /*permissionCode.setCode(generatedCode);*/
+        permissionCode.setCode(generatedCode);
         permissionCode.setUser(user.get());
         permissionCode.setCodeExpirationTime(System.currentTimeMillis() + 900000);
         permissionCode = permissionCodeRepository.save(permissionCode);

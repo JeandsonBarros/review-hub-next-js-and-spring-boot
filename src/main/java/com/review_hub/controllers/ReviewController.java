@@ -50,7 +50,6 @@ public class ReviewController {
     @Operation(summary = "Get review by id| Authority: Permit All")
     @GetMapping("/{reviewId}")
     public ResponseEntity<Review> getReview(@PathVariable Long reviewId) {
-        System.out.println(reviewId);
         return new ResponseEntity<>(reviewService.getReview(reviewId), HttpStatus.OK);
     }
 
@@ -73,7 +72,7 @@ public class ReviewController {
     @ApiResponse(responseCode = "200")
     @Operation(summary = "Get product review statistics | Authority: Permit All")
     @GetMapping("/product/{productId}/statistics")
-    public ResponseEntity<ProductReviewStatistics> productReviewStatisticsResponse(@PathVariable Long productId) {
+    public ResponseEntity<ProductReviewStatistics> getProductReviewStatistics(@PathVariable Long productId) {
         return new ResponseEntity<>(reviewService.getProductReviewStatistics(productId), HttpStatus.OK);
     }
 

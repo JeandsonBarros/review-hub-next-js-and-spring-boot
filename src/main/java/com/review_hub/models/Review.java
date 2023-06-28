@@ -21,7 +21,7 @@ public class Review {
     private Product product;
     @Column(nullable = false)
     private Integer note;
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String comment;
     @Column(nullable = false)
     private String date;

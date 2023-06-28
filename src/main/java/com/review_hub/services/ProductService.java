@@ -25,7 +25,6 @@ public class ProductService {
 
     public Page<Product> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
-        /*return new ResponseEntity<>("Error listing products", HttpStatus.INTERNAL_SERVER_ERROR);*/
     }
 
     public Product getProduct(Long id) {
@@ -35,24 +34,18 @@ public class ProductService {
             throw new NotFoundException("Product not found");
 
         return product.get();
-
-        /* return new ResponseEntity<>("Error getting product data " + id, HttpStatus.INTERNAL_SERVER_ERROR);*/
-
     }
 
     public Page<Product> findByNameContaining(String name, Pageable pageable) {
         return productRepository.findByNameContaining(name, pageable);
-        /* return new ResponseEntity<>("Error finding product", HttpStatus.INTERNAL_SERVER_ERROR);*/
     }
 
     public Page<Product> findByNameContainingAndCategoryContaining(String name, String category, Pageable pageable) {
         return productRepository.findByNameContainingAndCategoryContaining(name, category, pageable);
-        /*return new ResponseEntity<>("Error finding product", HttpStatus.INTERNAL_SERVER_ERROR);*/
     }
 
     public Page<Product> findByCategory(String category, Pageable pageable) {
         return productRepository.findByCategory(category, pageable);
-        /* return new ResponseEntity<>("Error listing products", HttpStatus.INTERNAL_SERVER_ERROR);*/
     }
 
     public Product saveNewProduct(ProductDTO productDTO) {
@@ -66,7 +59,7 @@ public class ProductService {
                 product.setImgName(fileName);
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error saving product image");
+                throw new RuntimeException("Error saving product image");
             }
         }
 
@@ -117,7 +110,7 @@ public class ProductService {
                 product.setImgName(fileName);
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error updating product image");
+                throw new RuntimeException("Error updating product image");
             }
         }
 
@@ -137,7 +130,7 @@ public class ProductService {
                 fileService.delete("uploads/img_products/" + product.get().getImgName());
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error deleting product image");
+                throw new RuntimeException("Error deleting product image");
             }
         }
         productRepository.deleteById(id);

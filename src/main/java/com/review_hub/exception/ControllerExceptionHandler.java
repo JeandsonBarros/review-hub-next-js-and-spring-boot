@@ -67,7 +67,7 @@ public class ControllerExceptionHandler {
         return message;
     }
 
-    @ExceptionHandler(value = Exception.class)
+    @ExceptionHandler(value = {Exception.class, RuntimeException.class})
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     public Message globalExceptionHandler(Exception ex, WebRequest request) {
         ex.printStackTrace();
