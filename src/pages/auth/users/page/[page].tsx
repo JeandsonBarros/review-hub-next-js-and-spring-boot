@@ -1,26 +1,29 @@
-import Alert from '@/components/Alert';
-import Dropdown from '@/components/Dropdown';
-import Input from '@/components/Input';
-import Load from '@/components/Load';
-import Modal from '@/components/Modal';
-import Pagination from '@/components/Pagination';
-import { baseURL } from '@/service/api';
-import { deleteAUser, findUser, getUsers, patchAUser } from '@/service/auth_service';
+import Alert from '../../../../components/Alert';
+import Dropdown from '../../../../components/Dropdown';
+import Input from '../../../../components/Input';
+import Load from '../../../../components/Load';
+import Modal from '../../../../components/Modal';
+import Pagination from '../../../../components/Pagination';
+import { baseURL } from '../../../../service/api';
+import { deleteAUser, findUser, getUsers, patchAUser } from '../../../..//service/auth_service';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { MdDelete, MdEditSquare, MdMoreVert, MdSearch } from 'react-icons/md';
 
 import styles from '../../../../styles/pages_styles/auth.module.css';
+import { User } from '../../../../types/models/User';
+import { UserDTO } from '../../../../types/dtos/UserDTO';
 
 export default function Users() {
 
-    const [userTemp, setUserTemp] = useState({ name: '', email: '', password: '', confirmPassword: '', role: '' })
+    const [userTemp, setUserTemp] = useState<UserDTO>()
+    const [confirmPassword, setConfirmPassword] = useState('')
     const [alert, setAlert] = useState({ text: '', status: 'info', isVisible: false })
     const [isVisibleConfirmModal, setIsVisibleConfirmModal] = useState(false)
     const [visibleModalUser, setVisivibleModalUser] = useState(false)
     const [totalPages, setTotalPages] = useState(0)
     const [isLoad, setIsLoad] = useState(false)
-    const [users, setUsers] = useState([])
+    const [users, setUsers] = useState<User[]>([])
     const router = useRouter()
     const page = Number(router.query.page)
     const search = router.query.search
@@ -29,7 +32,7 @@ export default function Users() {
         getListUsers()
     }, [page, search])
 
-    function setDataUserUpdate(value, key) {
+    function setDataUserUpdate(value: any, key: string) {
         let userData = userTemp
         userData[key] = value
         setUserTemp({ ...userData })
@@ -38,57 +41,94 @@ export default function Users() {
     async function getListUsers() {
 
         setIsLoad(true)
-        const response = search ? await findUser(page - 1, search) : await getUsers(page - 1)
+
+        try {
+            const response = search ? await findUser(page - 1, String(search)) : await getUsers(page - 1)
+            setTotalPages(response.totalPages)
+            setUsers(response.content)
+
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error getting users',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
         setIsLoad(false)
 
-        if (response.data) {
-            setTotalPages(response.data.totalPages)
-            setUsers(response.data.content)
-        } else if (response.message) {
-            setAlert({ text: response.message, status: response.status, isVisible: true })
-        }
     }
 
     async function updateDataUser() {
 
-        if (!userTemp.name || !userTemp.email || !userTemp.role)
+        if (!userTemp.name || !userTemp.email || !userTemp.role) {
             return setAlert({ text: "Do not leave empty fields", status: "warning", isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await patchAUser(userTemp.email, { name: userTemp.name, email: userTemp.email, role: userTemp.role })
-        setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
+        try {
+            const responseMessage = await patchAUser(userTemp.email, { name: userTemp.name, email: userTemp.email, role: userTemp.role })
+            setAlert({ text: responseMessage, status: 'success', isVisible: true })
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error updating user',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
+        setIsLoad(false)
         getListUsers()
 
     }
 
     async function updatePasswordUser() {
 
-        if (!userTemp.password || !userTemp.confirmPassword)
-            return setAlert({ text: 'Do not leave empty fields', status: 'warning' })
-
-        if (userTemp.confirmPassword !== userTemp.password)
-            return setAlert({ text: 'Passwords do not match', status: 'warning' })
+        if (!userTemp.password || !confirmPassword) {
+            return setAlert({ text: 'Do not leave empty fields', status: 'warning', isVisible: true })
+        }
+        if (confirmPassword !== userTemp.password) {
+            return setAlert({ text: 'Passwords do not match', status: 'warning', isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await patchAUser(userTemp.email, { password: userTemp.password })
-        setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
+        try {
+            const responseMessage = await patchAUser(userTemp.email, { password: userTemp.password })
+            setAlert({ text: responseMessage, status: 'success', isVisible: true })
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error updating user',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
+        setIsLoad(false)
         getListUsers()
 
     }
 
-    async function deleteUser(email) {
+    async function deleteUser(email: string) {
 
         setIsLoad(true)
-        const response = await deleteAUser(email)
-        setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        getListUsers()
+        try {
+            const responseMessage = await deleteAUser(email)
+            setAlert({ text: responseMessage, status: 'success', isVisible: true })
+
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error deleting user',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
+        setIsLoad(false)
         setIsVisibleConfirmModal(false)
+        getListUsers()
 
     }
 
@@ -100,7 +140,7 @@ export default function Users() {
                 <Input
                     placeholder="Search by name"
                     icon={<MdSearch />}
-                    setValue={text => router.push(`./1` + (text ? `?search=${text}` : ``))}
+                    setValue={(text: string) => router.push(`./1` + (text ? `?search=${text}` : ``))}
                 />
             </div>
 
@@ -124,24 +164,35 @@ export default function Users() {
 
                         <h1> Update data </h1>
 
-                        <Input placeholder="Name" value={userTemp.name} setValue={text => setDataUserUpdate(text, 'name')} required={true} />
+                        <Input
+                            placeholder="Name"
+                            value={userTemp && userTemp.name}
+                            setValue={(text: string) => setDataUserUpdate(text, 'name')}
+                            required={true}
+                        />
 
-                        <Input placeholder="Email" value={userTemp.email} setValue={text => setDataUserUpdate(text, 'email')} type="email" required={true} />
+                        <Input
+                            placeholder="Email"
+                            value={userTemp && userTemp.email}
+                            setValue={(text: string) => setDataUserUpdate(text, 'email')}
+                            type="email"
+                            required={true}
+                        />
 
                         <div className='flex_row'>
 
                             <div className={styles.control_radio}>
-                                <input type="radio" id="user" name="role" value="USER" defaultChecked={userTemp.role === "USER"} onChange={event => setDataUserUpdate(event.target.value, 'role')} />
+                                <input type="radio" id="user" name="role" value="USER" defaultChecked={userTemp && userTemp.role === "USER"} onChange={event => setDataUserUpdate(event.target.value, 'role')} />
                                 <label htmlFor="user">User</label>
                             </div>
 
                             <div className={styles.control_radio}>
-                                <input type="radio" id="admin" name="role" value="ADMIN" defaultChecked={userTemp.role === "ADMIN"} onChange={event => setDataUserUpdate(event.target.value, 'role')} />
+                                <input type="radio" id="admin" name="role" value="ADMIN" defaultChecked={userTemp && userTemp.role === "ADMIN"} onChange={event => setDataUserUpdate(event.target.value, 'role')} />
                                 <label htmlFor="admin">Admin</label>
                             </div>
 
                             <div className={styles.control_radio}>
-                                <input type="radio" id="master" name="role" value="MASTER" defaultChecked={userTemp.role === "MASTER"} onChange={event => setDataUserUpdate(event.target.value, 'role')} />
+                                <input type="radio" id="master" name="role" value="MASTER" defaultChecked={userTemp && userTemp.role === "MASTER"} onChange={event => setDataUserUpdate(event.target.value, 'role')} />
                                 <label htmlFor="master">Master</label>
                             </div>
 
@@ -155,9 +206,19 @@ export default function Users() {
 
                         <h1> Update password </h1>
 
-                        <Input placeholder="Password" setValue={text => setDataUserUpdate(text, 'password')} type="password" required={true} />
+                        <Input
+                            placeholder="Password"
+                            setValue={(text: string) => setDataUserUpdate(text, 'password')}
+                            type="password"
+                            required={true}
+                        />
 
-                        <Input placeholder="Confirm password" setValue={text => setDataUserUpdate(text, 'confirmPassword')} type="password" required={true} />
+                        <Input
+                            placeholder="Confirm password"
+                            setValue={(text: string) => setConfirmPassword(text)}
+                            type="password"
+                            required={true}
+                        />
 
                         <button type='button' onClick={updatePasswordUser} className='button_primary'>Update password</button>
 
@@ -174,7 +235,7 @@ export default function Users() {
 
                     <h1>Delete user</h1>
 
-                    <p>By deleting the email user "{userTemp.email}", all of its data will be permanently removed. Do you really want to continue?</p>
+                    <p>By deleting the email user "{userTemp && userTemp.email}", all of its data will be permanently removed. Do you really want to continue?</p>
 
                     <div className="flex_row">
                         <button type="button" className="button_primary" onClick={() => deleteUser(userTemp.email)}>Confirm</button>
@@ -193,7 +254,7 @@ export default function Users() {
                             <div className={`${styles.item_user_list} flex_row justify_between`}>
 
                                 <div className='flex_row'>
-                                    <img htmlFor="input_file" src={user.profileImageName ? `${baseURL}/auth/get-img/${user.profileImageName}` : "/img/person-circle.svg"} className="img_profile_view" />
+                                    <img src={user.profileImageName ? `${baseURL}/auth/get-img/${user.profileImageName}` : "/img/person-circle.svg"} className="img_profile_view" />
                                     <div>
                                         <p>{user.name}</p>
                                         <small>{user.email}</small>
@@ -244,7 +305,7 @@ export default function Users() {
                 <Pagination
                     totalPages={totalPages}
                     actualPage={page}
-                    onPress={(value) => router.push("./" + value + (search ? `?search=${search}` : ``))}
+                    onPress={(value: number) => router.push("./" + value + (search ? `?search=${search}` : ``))}
                 />
             </div>
 

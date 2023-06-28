@@ -1,4 +1,4 @@
-import { getDataAccount } from '@/service/auth_service';
+import { getDataAccount } from '../service/auth_service';
 import Head from 'next/head';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -88,12 +88,15 @@ function MainContainer({ children }) {
     /* Checks if the logged in user is authorized to access a certain route,
      if not, it is redirected to the home page */
     async function isAuthorized() {
-        const response = await getDataAccount()
-        if (response.data) {
-            if (response.data.role === "USER") router.push("/")
-        } else {
-            console.log("Authorized");
+       
+        try {
+            const userData = await getDataAccount()
+            if (userData.role === "USER") router.push("/")
+        } catch (error) {
+            console.log(error);
+            router.push("/")
         }
+        
     }
 
     return (

@@ -1,22 +1,21 @@
-import Alert from '@/components/Alert';
-import Card from '@/components/Card';
-import Input from '@/components/Input';
-import Load from '@/components/Load';
-import { completeRegistrationByCode, login, register } from '@/service/auth_service';
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import Load from '../../components/Load';
+import { completeRegistrationByCode, login, register } from '../../service/auth_service';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { MdMail, MdPassword, MdPerson } from 'react-icons/md';
 
 import styles from '../../styles/pages_styles/auth.module.css';
+import { UserDTO } from '../../types/dtos/UserDTO';
 
 function Register() {
 
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
+    const [user, setUser] = useState<UserDTO>()
     const [confirmPassword, setConfirmPassword] = useState("")
-    const [code, setCode] = useState()
+    const [code, setCode] = useState<number>()
     const [isSendCode, setIsSendCode] = useState(false)
     const router = useRouter();
     const [isLoad, setIsLoad] = useState(false)
@@ -27,38 +26,59 @@ function Register() {
     }
 
     async function registerUser() {
-       
-        if (!name || !password || !confirmPassword || !email)
+
+
+        if (!user.name || !user.password || !confirmPassword || !user.email)
             return setAlert({ text: 'Do not leave empty fields', status: 'warning', isVisible: true })
 
-        if (confirmPassword !== password)
+        if (confirmPassword !== user.password)
             return setAlert({ text: 'Passwords do not match', status: 'warning', isVisible: true })
 
         setIsLoad(true)
-        const response = await register(name, email, password)
+
+        try {
+            const response = await register(user)
+            setIsSendCode(true)
+            setAlert({ text: response, status: 'success', isVisible: true })
+        } catch (error) {
+            console.log(error);
+
+            setAlert({
+                text: error.response ? error.response.data.message : 'Register error',
+                status: 'error',
+                isVisible: true
+            })
+
+        }
+
         setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        if (response.status === 'success')
-            setIsSendCode(true)
     }
 
     async function useCode() {
 
-        if (!code)
-            return setAlert({ text: 'Code sent to the email is mandatory', status: 'warning' })
+        if (!code) {
+            return setAlert({ text: 'Code sent to the email is mandatory', status: 'warning', isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await completeRegistrationByCode(email, code)
-        setIsLoad(false)
 
-        if (response.status === 'success') {
-            const responseLogin = await login(email, password)
-            if (responseLogin.status === 'success')
-                router.push("/")
+        try {
+
+            await completeRegistrationByCode(user.email, code)
+            await login(user.email, user.password)
+            router.push("/")
+
+        } catch (error) {
+            console.log(error.status);
+            setAlert({
+                text: error.response ? error.response.data.message : 'Register error',
+                status: 'error',
+                isVisible: true
+            })
         }
-        else
-            setAlert({ text: response.message, status: response.status, isVisible: true })
+
+        setIsLoad(false)
 
     }
 
@@ -86,51 +106,51 @@ function Register() {
 
                         <div>
                             <Input
-                                value={name}
+                                /*  value={user ? user.name : ''} */
                                 placeholder="Name"
                                 required={true}
                                 type="text"
-                                setValue={text => setName(text)}
+                                setValue={(text: string) => setUser({ ...user, name: text })}
                                 icon={<MdPerson />}
                             />
                         </div>
 
                         <div>
                             <Input
-                                value={email}
+                                /*  value={user ? user.email : ''} */
                                 placeholder="Email"
                                 required={true}
                                 type="email"
-                                setValue={text => setEmail(text)}
+                                setValue={(text: string) => setUser({ ...user, email: text })}
                                 icon={<MdMail />}
                             />
                         </div>
 
                         <div>
                             <Input
-                                value={password}
+                                /* value={user ? user.password : ''} */
                                 placeholder="Password"
                                 required={true}
                                 type="password"
-                                setValue={text => setPassword(text)}
+                                setValue={(text: string) => setUser({ ...user, password: text })}
                                 icon={<MdPassword />}
                             />
                         </div>
 
                         <div>
                             <Input
-                                value={confirmPassword}
+                                /* value={confirmPassword} */
                                 placeholder="Confirm password"
                                 required={true}
                                 type="password"
-                                setValue={text => setConfirmPassword(text)}
+                                setValue={(text: string) => setConfirmPassword(text)}
                                 icon={<MdPassword />}
                             />
                         </div>
 
                         <div className="flex_col items_center">
                             <button type="button" onClick={registerUser} className="button_primary">Sing in</button>
-                            <Link href='/auth/login' style={{marginTop: 20}} className="color_info">Login</Link>
+                            <Link href='/auth/login' style={{ marginTop: 20 }} className="color_info">Login</Link>
                         </div>
 
                     </form>
@@ -145,7 +165,7 @@ function Register() {
                                 type="number"
                                 required={true}
                                 value={code}
-                                setValue={value => setCode(value)}
+                                setValue={(value: number) => setCode(value)}
                             />
                         </div>
 

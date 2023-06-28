@@ -4,12 +4,23 @@ import { MdOutlineVisibility, MdOutlineVisibilityOff } from 'react-icons/md';
 
 import inputStyles from '../styles/components_styles/input.module.css';
 
-export default function Input({ type, required, placeholder, icon, value, setValue, css }) {
+interface InputProps {
+    type?: string,
+    required?: boolean,
+    placeholder?: string,
+    icon?: any,
+    value?: string | number,
+    setValue?: any,
+    css?: any,
+    step?: string
+}
 
-    const inputRef = createRef();
-    const labelRef = createRef();
-    const divRef = createRef();
-    const [typeInput, setTypeInput] = useState()
+export default function Input({ type, step, required, placeholder, icon, value, setValue, css }: InputProps) {
+
+    const inputRef = createRef<any>();
+    const labelRef = createRef<any>();
+    const divRef = createRef<any>();
+    const [typeInput, setTypeInput] = useState<string>()
 
     useEffect(() => {
         setTypeInput(type)
@@ -65,10 +76,10 @@ export default function Input({ type, required, placeholder, icon, value, setVal
                 </label>
 
                 <input
-                    min="1" 
-                    step="any"
+                    min="1"
+                    step={`${step}`}
                     ref={inputRef}
-                    type={typeInput}
+                    type={`${typeInput}`}
                     value={value && value}
                     onChange={event => setValue && setValue(event.target.value)}
                 />
@@ -86,13 +97,9 @@ export default function Input({ type, required, placeholder, icon, value, setVal
     );
 }
 
-Input.propTypes = {
-    setValue: PropTypes.func,
-    css: PropTypes.object
-};
-
 Input.defaultProps = {
     type: 'text',
-    required: false
+    required: false,
+    step: '1'
 };
 

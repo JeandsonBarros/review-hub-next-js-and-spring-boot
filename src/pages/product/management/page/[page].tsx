@@ -1,20 +1,42 @@
-import Input from "@/components/Input";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useRouter } from 'next/router';
+import { FormEvent, useEffect, useState } from 'react';
 import { MdDelete, MdEditSquare, MdMoreVert, MdSearch } from 'react-icons/md';
-import styles from '../../../../styles/pages_styles/products.module.css'
-import Alert from "@/components/Alert";
-import Load from "@/components/Load";
-import Modal from "@/components/Modal";
-import Pagination from "@/components/Pagination";
-import { deleteProduct, findProductByName, getProducts, patchProduct, postProduct } from "@/service/product_service";
-import { baseURL } from "@/service/api";
-import Dropdown from "@/components/Dropdown";
+
+import Alert from '../../../../components/Alert';
+import Dropdown from '../../../../components/Dropdown';
+import Input from '../../../../components/Input';
+import Load from '../../../../components/Load';
+import Modal from '../../../../components/Modal';
+import Pagination from '../../../../components/Pagination';
+import { baseURL } from '../../../../service/api';
+import {
+    deleteProduct,
+    findProductByName,
+    getProducts,
+    patchProduct,
+    postProduct,
+} from '../../../../service/product_service';
+import styles from '../../../../styles/pages_styles/products.module.css';
+import { ProductDTO } from '../../../../types/dtos/ProductDTO';
+import { Product } from '../../../../types/models/Product';
+
+interface ProductItemProps {
+    product: Product,
+    updateProduct: (productDTO: ProductDTO, id: Number) => Promise<void>,
+    removeProduct: (id: Number) => Promise<void>,
+}
+interface ModalProductProps {
+    productUpdate?: Product,
+    onSave: (productDTO: ProductDTO) => Promise<void>,
+    isVisible: boolean,
+    onClosed: () => void,
+    title: string
+}
 
 export default function ProductManagement() {
 
     const [visibleModalAddProduct, setVisivibleModalAddProduct] = useState(false)
-    const [products, setProducts] = useState([])
+    const [products, setProducts] = useState<Product[]>([])
     const [isLoad, setIsLoad] = useState(false)
     const [alert, setAlert] = useState({ text: '', status: 'info', isVisible: false })
     const router = useRouter()
@@ -27,45 +49,58 @@ export default function ProductManagement() {
     }, [page, search])
 
     async function listProducts() {
-
         setIsLoad(true)
-        const response = search ? await findProductByName(search, page - 1) : await getProducts(page - 1)
-        setIsLoad(false)
 
-        if (response.data) {
-            setTotalPages(response.data.totalPages)
-            return setProducts(response.data.content)
+        try {
+            const pageProducts = search ? await findProductByName(String(search), page - 1) : await getProducts(page - 1)
+            setTotalPages(pageProducts.totalPages)
+            setProducts(pageProducts.content)
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error getting products',
+                status: 'error',
+                isVisible: true
+            })
         }
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-    }
-
-    async function addProduct(product) {
-        setIsLoad(true)
-        const response = await postProduct(product)
         setIsLoad(false)
 
-        listProducts()
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        return response
     }
 
-    async function updateProduct(product, id) {
-        setIsLoad(true)
-        const response = await patchProduct(product, id)
-        setIsLoad(false)
+    async function addProduct(productDTO: ProductDTO) {
 
+        const respMessage = await postProduct(productDTO)
+        setAlert({ text: respMessage, status: 'success', isVisible: true })
         listProducts()
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        return response
+
     }
 
-    async function removeProduct(id) {
-        setIsLoad(true)
-        const response = await deleteProduct(id)
-        setIsLoad(false)
-        setAlert({ text: response.message, status: response.status, isVisible: true })
+    async function updateProduct(productDTO: ProductDTO, id: Number) {
+
+        const respMessage = await patchProduct(productDTO, id)
+        setAlert({ text: respMessage, status: 'success', isVisible: true })
         listProducts()
+
+    }
+
+    async function removeProduct(id: number) {
+
+        setIsLoad(true)
+
+        try {
+            const respMessage = await deleteProduct(id)
+            setAlert({ text: respMessage, status: 'success', isVisible: true })
+            listProducts()
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error deleting product',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
+        setIsLoad(false)
+
     }
 
     return (
@@ -76,7 +111,7 @@ export default function ProductManagement() {
                 <Input
                     placeholder="Search product"
                     icon={<MdSearch />}
-                    setValue={text => router.push(`./1` + (text ? `?search=${text}` : ``))}
+                    setValue={(text: string) => router.push(`./1` + (text ? `?search=${text}` : ``))}
                 />
             </div>
 
@@ -103,7 +138,7 @@ export default function ProductManagement() {
                 {products.length > 0
                     ? products.map(product => {
                         return (
-                            <Product
+                            <ProductItem
                                 key={product.id}
                                 product={product}
                                 removeProduct={removeProduct}
@@ -126,7 +161,7 @@ export default function ProductManagement() {
                 <Pagination
                     totalPages={totalPages}
                     actualPage={page}
-                    onPress={(value) => router.push("./" + value + (search ? `?search=${search}` : ``))}
+                    onPress={(value: number) => router.push("./" + value + (search ? `?search=${search}` : ``))}
                 />
             </div>
 
@@ -134,10 +169,11 @@ export default function ProductManagement() {
     );
 }
 
-function Product({ product, updateProduct, removeProduct }) {
+function ProductItem({ product, updateProduct, removeProduct }: ProductItemProps) {
 
     const [visibleModalProduct, setVisivibleModalProduct] = useState(false)
     const [isVisibleConfirmModal, setIsVisibleConfirmModal] = useState(false)
+    const [isLoad, setIsLoad] = useState(false)
 
     return (
         <div>
@@ -210,8 +246,27 @@ function Product({ product, updateProduct, removeProduct }) {
                             Do you really want to continue?</p>
 
                         <div className="flex_row">
-                            <button type="button" className="button_primary" onClick={() => removeProduct(product.id)}>Confirm</button>
-                            <button type="button" className="button_secondary" onClick={() => setIsVisibleConfirmModal(false)}>Cancel</button>
+
+                            <button
+                                type="button"
+                                className="button_primary flex_row items_center"
+                                onClick={async () => {
+                                    setIsLoad(true)
+                                    await removeProduct(product.id)
+                                    setIsLoad(false)
+                                    setIsVisibleConfirmModal(false)
+                                }}>
+                                {isLoad && <Load size={15} css={{ marginRight: 5 }} />}
+                                <span>Confirm</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                className="button_secondary"
+                                onClick={() => setIsVisibleConfirmModal(false)}>
+                                Cancel
+                            </button>
+
                         </div>
 
                     </div>
@@ -224,11 +279,12 @@ function Product({ product, updateProduct, removeProduct }) {
     )
 }
 
-function ModalProduct({ productUpdate, onSave, isVisible, onClosed, title }) {
+function ModalProduct({ productUpdate, onSave, isVisible, onClosed, title }: ModalProductProps) {
 
-    const [product, setProduct] = useState(productUpdate || {})
-    const [previewImage, setPreviewImage] = useState()
+    const [product, setProduct] = useState<Product | any>(productUpdate || {})
+    const [previewImage, setPreviewImage] = useState<string | undefined>()
     const [alert, setAlert] = useState({ text: '', status: 'info', isVisible: false })
+    const [isLoad, setIsLoad] = useState(false)
 
     useEffect(() => {
 
@@ -245,34 +301,51 @@ function ModalProduct({ productUpdate, onSave, isVisible, onClosed, title }) {
 
     }, [product.img])
 
-    function setDataProduct(value, key) {
+    function setDataProduct(value: any, key: string) {
         let productData = product
         productData[key] = value
         setProduct({ ...productData })
     }
 
-    async function submitForm(event) {
+    async function submitForm(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
 
-        if (!product.name || !product.description || !product.price || !product.category)
+        if (!product.name || !product.description || !product.price || !product.category) {
             return setAlert({ text: "Do not leave empty fields", status: "warning", isVisible: true })
+        }
 
-        if (product.description.length > 570)
+        if (product.description.length > 570) {
             return setAlert({
                 text: "The maximum number of characters in the description is 570, you informed " + product.description.length,
                 status: "warning",
                 isVisible: true
             })
+        }
 
-        const response = await onSave({
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            category: product.category,
-            img: product.img
-        })
+        setIsLoad(true)
 
-        if (response.status === 'success') onClosed()
+        try {
+
+            await onSave({
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                category: product.category,
+                img: product.img
+            })
+
+            onClosed()
+
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error saveing product',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
+        setIsLoad(false)
+
     }
 
     return (
@@ -292,21 +365,21 @@ function ModalProduct({ productUpdate, onSave, isVisible, onClosed, title }) {
                     <Input
                         placeholder="Name"
                         value={product.name || ''}
-                        setValue={text => setDataProduct(text, 'name')}
+                        setValue={(text: string) => setDataProduct(text, 'name')}
                         required={true}
                     />
 
                     <Input
                         placeholder="Category"
                         value={product.category || ''}
-                        setValue={text => setDataProduct(text, 'category')}
+                        setValue={(text: string) => setDataProduct(text, 'category')}
                         required={true}
                     />
 
                     <Input
                         placeholder="Price"
                         value={product.price || NaN}
-                        setValue={text => setDataProduct(text, 'price')}
+                        setValue={(text: number) => setDataProduct(text, 'price')}
                         type="number"
                         required={true}
                     />
@@ -314,7 +387,7 @@ function ModalProduct({ productUpdate, onSave, isVisible, onClosed, title }) {
                     <div >
                         <label>Description:</label>
                         <textarea
-                            rows="4"
+                            rows={4}
                             onChange={event => setDataProduct(event.target.value, "description")}
                             value={product.description || ''}
                         />
@@ -347,7 +420,10 @@ function ModalProduct({ productUpdate, onSave, isVisible, onClosed, title }) {
 
                     <hr />
 
-                    <button type='submit' className='button_primary'> Save </button>
+                    <button type='submit' className='button_primary flex_row items_center'>
+                        {isLoad && <Load size={15} css={{ marginRight: 5 }} />}
+                        <span>Save</span>
+                    </button>
 
                 </form>
 

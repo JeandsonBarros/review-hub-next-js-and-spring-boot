@@ -1,8 +1,8 @@
-import Alert from '@/components/Alert';
-import Card from '@/components/Card';
-import Input from '@/components/Input';
-import Load from '@/components/Load';
-import { login } from '@/service/auth_service';
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import Load from '../../components/Load';
+import { login } from '../../service/auth_service';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -28,13 +28,20 @@ function Login() {
             return setAlert({ text: 'Do not leave empty fields', status: 'warning', isVisible: true })
 
         setIsLoad(true)
-        const response = await login(email, password)
+
+        try {
+            await login(email, password)
+            router.push("/")
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Login error',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
         setIsLoad(false)
 
-        if (response.status === 'success')
-            router.push("/")
-        else
-            setAlert({ text: response.message, status: response.status, isVisible: true })
     }
 
     return (
@@ -53,15 +60,13 @@ function Login() {
                         <h3>Login</h3>
                     </div>
 
-                    {isLoad && <Load />}
-
                     <div>
                         <Input
                             value={email}
                             placeholder="Email"
                             required={true}
                             type="email"
-                            setValue={text => setEmail(text)}
+                            setValue={(text: string) => setEmail(text)}
                             icon={<MdMail />}
                         />
                     </div>
@@ -72,15 +77,31 @@ function Login() {
                             placeholder="Password"
                             required={true}
                             type="password"
-                            setValue={text => setPassword(text)}
+                            setValue={(text: string) => setPassword(text)}
                             icon={<MdPassword />}
                         />
                         <Link href="/auth/forgot-password" style={{ fontSize: 12 }} className="color_info">Forgot password?</Link>
                     </div>
 
                     <div className="flex_col items_center">
-                        <button type="button" className="button_primary" onClick={userLogin} >Login</button>
-                        <Link href='/auth/register' style={{ marginTop: 20 }} className="color_info">Sing in</Link>
+
+                        <button
+                            type="button"
+                            className="button_primary flex_row items_center"
+                            onClick={userLogin}
+                        >
+                            {isLoad && <Load css={{ marginRight: 5 }} size={15} />}
+                            <span>Login</span>
+                        </button>
+
+                        <Link
+                            href='/auth/register'
+                            style={{ marginTop: 20 }}
+                            className="color_info"
+                        >
+                            Sing in
+                        </Link>
+
                     </div>
 
                 </form>

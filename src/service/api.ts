@@ -6,14 +6,14 @@ export const api = axios.create({
     baseURL: baseURL,
 });
 
-export function toStringResponse(response) {
+export function toStringResponse(response: any): string {
 
     if (typeof (response.data) === "string") {
         return response.data;
     } else if (typeof (response.data) === "object") {
 
         let message = ''
-        response.data.forEach(element => {
+        response.data.forEach((element: any) => {
             message += (element + ', ')
         });
 

@@ -1,35 +1,40 @@
+import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { MdStar, MdStarHalf, MdStarOutline } from 'react-icons/md';
+
+import Alert from '../../../../components/Alert';
+import Modal from '../../../../components/Modal';
+import Pagination from '../../../../components/Pagination';
+import { baseURL } from '../../../../service/api';
+import { selectUserReviews } from '../../../../service/review_service';
 import stylesProducts from '../../../../styles/pages_styles/products.module.css';
 import stylesReviews from '../../../../styles/pages_styles/reviews.module.css';
-import { useEffect, useState } from 'react';
-import { selectUserReviews } from '@/service/review_service';
-import Alert from '@/components/Alert';
-import Pagination from '@/components/Pagination';
-import { baseURL } from '@/service/api';
-import { MdStar, MdStarHalf, MdStarOutline } from 'react-icons/md';
-import Link from 'next/link';
-import ProductCard from '@/components/ProductCard';
-import Card from '@/components/Card';
-import Modal from '@/components/Modal';
+import { Review } from '../../../../types/models/Review';
+
+interface ReviewItemProps {
+    review: Review
+}
 
 export default function YourReviews() {
 
     const router = useRouter()
     const page = Number(router.query.page)
-    const [totalPages, setTotalPages] = useState()
-    const [reviews, setReviews] = useState([])
+    const [totalPages, setTotalPages] = useState(0)
+    const [reviews, setReviews] = useState<Review[]>([])
     const [alert, setAlert] = useState({ text: '', status: '', isVisible: false })
     const search = router.query.search
 
     useEffect(() => {
         selectUserReviews(page - 1).then(response => {
-            if (response?.data) {
-                setReviews(response.data.content)
-                setTotalPages(response.data.totalPages)
-                console.log(response.data.totalPages);
-            } else {
-                setAlert({ text: response.message, status: response.status, isVisible: true })
-            }
+            setReviews(response.content)
+            setTotalPages(response.totalPages)
+        }).catch(error => {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error getting reviews',
+                status: 'error',
+                isVisible: true
+            })
         })
     }, [page])
 
@@ -49,7 +54,7 @@ export default function YourReviews() {
                     {reviews.length > 0
                         ? reviews.map(review => {
                             return (
-                                <Review key={review.id} review={review} />
+                                <ReviewItem key={review.id} review={review} />
                             )
                         })
                         : <>
@@ -65,7 +70,7 @@ export default function YourReviews() {
                 <Pagination
                     actualPage={page}
                     totalPages={totalPages}
-                    onPress={(value) => router.push("./" + value + (search ? `?search=${search}` : ``))}
+                    onPress={(value: number) => router.push("./" + value + (search ? `?search=${search}` : ``))}
                 />
             </div>
 
@@ -73,11 +78,11 @@ export default function YourReviews() {
     );
 }
 
-function Review({ review }) {
+function ReviewItem({ review }: ReviewItemProps) {
 
     const [showMoreComment, setShowMoreComment] = useState(false)
 
-    function starsQuantity(note) {
+    function starsQuantity(note: number) {
 
         let stars = []
 
@@ -108,9 +113,9 @@ function Review({ review }) {
                         <p >{review.product.category}</p>
                         <h1>{review.product.name}</h1>
                         <p>{(() => {
-                            return review.product.price.toLocaleString("en-US", {style:"currency", currency:"USD"});
+                            return review.product.price.toLocaleString("en-US", { style: "currency", currency: "USD" });
                         })()}</p >
-                        {starsQuantity(review.product.averageRating)}
+                        {starsQuantity(review.product.averageReviews)}
                     </div>
                 </Link>
 
@@ -118,7 +123,7 @@ function Review({ review }) {
 
                     <p className='items_center'><span>Your note:</span> {starsQuantity(review.note)}</p>
                     {(review?.comment && review.comment.length > 255)
-                        ? <p>{review.comment.slice(0, 255)}...<button onClick={()=> setShowMoreComment(true)} style={{ color: '#0077ff' }}>more</button> </p>
+                        ? <p>{review.comment.slice(0, 255)}...<button onClick={() => setShowMoreComment(true)} style={{ color: '#0077ff' }}>more</button> </p>
                         : <p>{review.comment}</p>
                     }
 

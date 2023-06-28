@@ -1,10 +1,16 @@
 import Link from "next/link";
-import Card from "./Card";
 import { MdStar, MdStarHalf, MdStarOutline } from "react-icons/md";
 import styles from "../styles/components_styles/product-card.module.css";
-import { baseURL } from "@/service/api";
+import { baseURL } from "../service/api";
+import Card from "./Card";
+import { Product } from "../types/models/Product";
 
-function ProductCard({ product, css }) {
+interface ProductCardProps{
+    product: Product,
+    css?: any
+}
+
+export default function ProductCard({ product, css }: ProductCardProps) {
 
     function starsQuantity() {
         if (product) {
@@ -13,9 +19,9 @@ function ProductCard({ product, css }) {
             
             for (let c = 1; c <= 5; c++) {
 
-                if (product.averageRating % Math.floor(product.averageRating) > 0 && (c - 1) + (product.averageRating % Math.floor(product.averageRating)) === product.averageRating)
+                if (product.averageReviews % Math.floor(product.averageReviews) > 0 && (c - 1) + (product.averageReviews % Math.floor(product.averageReviews)) === product.averageReviews)
                     stars.push(<MdStarHalf key={c} />)
-                else if (c <= product.averageRating)
+                else if (c <= product.averageReviews)
                     stars.push(<MdStar key={c} />)
                 else
                     stars.push(<MdStarOutline key={c} />)
@@ -48,5 +54,3 @@ function ProductCard({ product, css }) {
         </div>
     );
 }
-
-export default ProductCard;

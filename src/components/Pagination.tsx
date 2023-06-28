@@ -12,11 +12,11 @@ export default function Pagination({ totalPages, actualPage, onPress }) {
 
             buttons.push(
                 <button
-                    id={cont}
+                    id={`${cont}`}
                     key={cont}
                     type='button'
                     className={"rounded" + (actualPage === cont ? " button_primary" : " button_secondary")}
-                    onClick={(event) => onPress(Number(event.target.id))}>
+                    onClick={(event: any) => onPress(Number(event.target.id))}>
                     {cont}
                 </button>
             )

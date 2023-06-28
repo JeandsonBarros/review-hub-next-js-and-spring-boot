@@ -1,34 +1,46 @@
-import Alert from '@/components/Alert';
-import ProductCard from '@/components/ProductCard';
-import { getProductByCategory } from '@/service/product_service';
+
 import { createRef, useEffect, useLayoutEffect, useState } from 'react';
 import { MdOutlineKeyboardArrowLeft, MdOutlineKeyboardArrowRight, MdOutlineAddCircle } from 'react-icons/md';
 
 import styles from '../styles/pages_styles/products.module.css';
 import Link from 'next/link';
+import { getProductByCategory } from '../service/product_service';
+import Alert from '../components/Alert';
+import ProductCard from '../components/ProductCard';
+import { Product } from '../types/models/Product';
 
 export async function getStaticProps() {
 
-  const resSmartphone = await getProductByCategory("Smartphone", 0, 5)
-  const resFurniture = await getProductByCategory("Furniture", 0, 5)
-  const resHomeAppliances = await getProductByCategory("Home appliances", 0, 5)
+  try {
 
-  return {
-    props: {
-      resSmartphone,
-      resFurniture,
-      resHomeAppliances
+    const resSmartphone = await getProductByCategory("Smartphone", 0, 5)
+    const resFurniture = await getProductByCategory("Furniture", 0, 5)
+    const resHomeAppliances = await getProductByCategory("Home appliances", 0, 5)
+
+    return {
+      props: {
+        resSmartphone: resSmartphone.content,
+        resFurniture: resFurniture.content,
+        resHomeAppliances: resHomeAppliances.content
+      }
+    }
+
+  } catch (error) {
+    return {
+      props: {
+        errorMessage: "Internal server error",
+      }
     }
   }
 
 }
 
-export default function Home({ resSmartphone, resFurniture, resHomeAppliances }) {
+export default function Home({ resSmartphone, resFurniture, resHomeAppliances, errorMessage }) {
 
-  const [smartphones, setSmartphones] = useState([])
-  const [furnitures, setFurnitures] = useState([])
-  const [homeAppliances, sethomeAppliances] = useState([])
-  const [alert, setAlert] = useState({ text: '', status: '', isVisible: false })
+  const [smartphones, setSmartphones] = useState<Product[]>([])
+  const [furnitures, setFurnitures] = useState<Product[]>([])
+  const [homeAppliances, sethomeAppliances] = useState<Product[]>([])
+  const [alert, setAlert] = useState<any>({ text: '', status: '', isVisible: false })
 
   useEffect(() => {
     listProducts()
@@ -36,28 +48,20 @@ export default function Home({ resSmartphone, resFurniture, resHomeAppliances })
 
   async function listProducts() {
 
+    if (errorMessage) {
+      return setAlert({ text: errorMessage, status: 'error', isVisible: true })
+    }
+
     if (resSmartphone) {
-      if (resSmartphone.data) {
-        setSmartphones(resSmartphone.data.content)
-      } else {
-        setAlert({ text: resSmartphone.message, status: resSmartphone.status, isVisible: true })
-      }
+      setSmartphones(resSmartphone)
     }
 
     if (resFurniture) {
-      if (resFurniture.data) {
-        setFurnitures(resFurniture.data.content)
-      } else {
-        setAlert({ text: resFurniture.message, status: resFurniture.status, isVisible: true })
-      }
+      setFurnitures(resFurniture)
     }
 
-    if (resFurniture) {
-      if (resHomeAppliances.data) {
-        sethomeAppliances(resHomeAppliances.data.content)
-      } else {
-        setAlert({ text: resHomeAppliances.message, status: resHomeAppliances.status, isVisible: true })
-      }
+    if (resHomeAppliances) {
+      sethomeAppliances(resHomeAppliances)
     }
 
   }
@@ -105,10 +109,10 @@ export default function Home({ resSmartphone, resFurniture, resHomeAppliances })
 
 function HorizontalList({ productsList }) {
 
-  const refList = createRef(null)
-  const arrowLeft = createRef(null)
-  const arrowRight = createRef(null)
-  const [products, setProducts] = useState([])
+  const refList = createRef<any>()
+  const arrowLeft = createRef<any>()
+  const arrowRight = createRef<any>()
+  const [products, setProducts] = useState<Product[]>([])
 
   useEffect(() => { setProducts(productsList) }, [productsList])
 
@@ -118,7 +122,7 @@ function HorizontalList({ productsList }) {
     }
   }, [refList])
 
-  const scroll = (scrollOffset) => {
+  const scroll = (scrollOffset: number) => {
     refList.current.scrollLeft += scrollOffset
     setVisibleButtonsArrows()
   }

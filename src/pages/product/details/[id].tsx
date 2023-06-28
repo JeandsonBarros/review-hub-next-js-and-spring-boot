@@ -1,128 +1,183 @@
-import Alert from '@/components/Alert';
-import Card from '@/components/Card';
-import { baseURL } from '@/service/api';
-import { getProduct } from '@/service/product_service';
-import { deleteReview, getReviewsByProduct, postReview, putReview, selectUserReviewByProduct } from '@/service/review_service';
+import Alert from '../../../components/Alert';
+import Card from '../../../components/Card';
+import { baseURL } from '../../../service/api';
+import { getProduct } from '../../../service/product_service';
+import { deleteReview, getProductReviewStatistics, getReviewsByProduct, postReview, putReview, selectUserReviewByProduct } from '../../../service/review_service';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { MdStar, MdStarHalf, MdStarOutline } from 'react-icons/md';
 
 import stylesProducts from '../../../styles/pages_styles/products.module.css';
 import stylesReviews from '../../../styles/pages_styles/reviews.module.css';
 import Link from 'next/link';
-import { getDataAccount } from '@/service/auth_service';
-import Pagination from '@/components/Pagination';
+import Pagination from '../../../components/Pagination';
+import { Product } from '../../../types/models/Product';
+import { ReviewDTO } from '../../../types/dtos/ReviewDTO';
+import { Review } from '../../../types/models/Review';
+import { ProductReviewStatistics } from '../../../types/models/ProductReviewStatistics';
 
 export default function productDetails() {
 
     const router = useRouter()
     const id = Number(router.query.id)
-    const [product, setProduct] = useState()
-    const [accountData, setAccountData] = useState()
-    const [reviews, setReviews] = useState([])
-    const [reviewStatistics, setReviewStatistics] = useState()
-    const [userReview, setUserReview] = useState({})
+    const [product, setProduct] = useState<Product>()
+    const [isLogged, setIsLogged] = useState(false)
+    const [reviews, setReviews] = useState<Review[]>([])
+    const [reviewStatistics, setReviewStatistics] = useState<ProductReviewStatistics>()
+    const [userReview, setUserReview] = useState<ReviewDTO>()
     const [alert, setAlert] = useState({ text: '', status: '', isVisible: false })
     const [pagination, setPagination] = useState({ page: 0, totalPages: 0 })
-    const [quantityStars, setQuantityStars] = useState(null)
+    const [quantityStars, setQuantityStars] = useState<number | null>(null)
 
     useEffect(() => { if (id) getAllData() }, [id, quantityStars])
 
     const getAllData = () => {
         listReviews()
         getProductData()
-        getUserData()
-    }
-
-    async function getUserData() {
-        const responseDataUser = await getDataAccount()
-        if (responseDataUser.data) {
-            setAccountData(responseDataUser.data)
-
-            const responseUserReview = await selectUserReviewByProduct(id)
-            if (responseUserReview.data)
-                setUserReview(responseUserReview.data)
-
-        }
+        getUserReview()
+        getSatatistics()
     }
 
     async function getProductData() {
-        const response = await getProduct(id)
 
-        if (response.data) {
-            setProduct(response.data)
-        } else {
-            setAlert({ text: response.message, status: response.status, isVisible: true })
+        try {
+            const productData = await getProduct(id)
+            setProduct(productData)
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : "Error geting product",
+                status: 'error',
+                isVisible: true
+            })
+        }
+    }
+
+    async function getUserReview() {
+
+        if (localStorage.getItem('token')) {
+            try {
+
+                setIsLogged(true)
+                const responseUserReview = await selectUserReviewByProduct(id)
+                setUserReview({
+                    id: responseUserReview.id,
+                    note: responseUserReview.note,
+                    comment: responseUserReview.comment,
+                    productId: responseUserReview.product.id
+                })
+
+            } catch (error) {
+                console.log(error);
+            }
+        }
+        
+    }
+
+    async function listReviews(page = 1) {
+
+        try {
+            const response = await getReviewsByProduct(id, page - 1, 10, quantityStars)
+            setPagination({ page: page, totalPages: response.totalPages })
+            setReviews(response.content)
+
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : "Error geting reviews",
+                status: 'error',
+                isVisible: true
+            })
         }
 
     }
 
-    async function listReviews(page = 1) {
-        const response = await getReviewsByProduct(id, page - 1, 10, quantityStars)
-
-        if (response.data) {
-
-            if (quantityStars) {
-                setPagination({ page: page, totalPages: response.data.totalPages })
-                setReviews(response.data.content)
-            } else {
-                setPagination({ page: page, totalPages: response.data.reviews.totalPages })
-                setReviews(response.data.reviews.content)
-                setReviewStatistics(response.data.reviewStatistics)
-            }
-
-        } else {
-            setAlert({ text: response.message, status: response.status, isVisible: true })
+    async function getSatatistics() {
+        try {
+            const response = await getProductReviewStatistics(id)
+            setReviewStatistics(response)
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : "Error geting satatistics",
+                status: 'error',
+                isVisible: true
+            })
         }
     }
 
     async function saveReview() {
-        if (!userReview.note)
-            return setAlert({ text: "Note is required", status: "warning", isVisible: true })
 
-        if (userReview?.comment && userReview.comment.length > 570)
+        if (!userReview.note) {
+            return setAlert({ text: "Note is required", status: "warning", isVisible: true })
+        }
+        if (userReview?.comment && userReview.comment.length > 570) {
             return setAlert({
                 text: "The maximum number of characters in the comment is 570, you informed " + userReview.comment.length,
                 status: "warning",
                 isVisible: true
             })
+        }
 
-        const response = await postReview(id, userReview.note, userReview.comment)
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        getAllData()
+        try {
+            const response = await postReview({ ...userReview, productId: id })
+            setAlert({ text: response, status: "success", isVisible: true })
+            getAllData()
+
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : "Error saveing review",
+                status: 'error',
+                isVisible: true
+            })
+        }
+
     }
 
     async function updateReview() {
 
-        if (!userReview.note)
+        if (!userReview.note) {
             return setAlert({ text: "Note is required", status: "warning", isVisible: true })
-
-        if (userReview?.comment && userReview.comment.length > 570)
+        }
+        if (userReview?.comment && userReview.comment.length > 570) {
             return setAlert({
                 text: "The maximum number of characters in the comment is 570, you informed " + userReview.comment.length,
                 status: "warning",
                 isVisible: true
             })
+        }
 
-        const response = await putReview(userReview.id, id, userReview.note, userReview.comment)
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        getAllData()
+        try {
+            const response = await putReview(userReview.id, userReview)
+            setAlert({ text: response, status: 'success', isVisible: true })
+            getAllData()
+
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : "Error updating review",
+                status: 'error',
+                isVisible: true
+            })
+        }
+
     }
 
     async function deleteUserReview() {
-        const response = await deleteReview(userReview.id)
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        getAllData()
-        setUserReview({})
+
+        try {
+            const responseMessage = await deleteReview(userReview.id)
+            setAlert({ text: responseMessage, status: 'success', isVisible: true })
+            getAllData()
+            setUserReview(null)
+
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : "Error deleting review",
+                status: 'error',
+                isVisible: true
+            })
+        }
+
     }
 
-    function setUserReviewForm(key, value) {
-        let userReviewTemp = userReview
-        userReviewTemp[key] = value
-        setUserReview({ ...userReviewTemp })
-    }
-
-    function starsQuantity(note) {
+    function starsQuantity(note: number): ReactElement {
 
         let stars = []
 
@@ -165,10 +220,10 @@ export default function productDetails() {
                             <h1>{product.name}</h1>
 
                             <p>{(() => {
-                                return product.price.toLocaleString("en-US", {style:"currency", currency:"USD"});
+                                return product.price.toLocaleString("en-US", { style: "currency", currency: "USD" });
                             })()}</p >
 
-                            {starsQuantity(product.averageRating)}
+                            {starsQuantity(product.averageReviews)}
 
                             <div style={{ marginTop: 10, maxWidth: 400 }}>{product.description}</div>
 
@@ -185,7 +240,7 @@ export default function productDetails() {
 
                     <h1>Your review</h1>
 
-                    {accountData
+                    {isLogged
                         ? <form >
 
                             <div >
@@ -198,7 +253,7 @@ export default function productDetails() {
                                         name="stars"
                                         id="radio-5"
                                         checked={userReview?.note && userReview.note == 5}
-                                        onChange={() => setUserReviewForm("note", 5)}
+                                        onChange={() => setUserReview({ ...userReview, note: 5 })}
                                     />
                                     <label title="5 stars" htmlFor="radio-5"><MdStar /></label>
 
@@ -208,7 +263,7 @@ export default function productDetails() {
                                         name="stars"
                                         id="radio-4"
                                         checked={userReview?.note && userReview.note == 4}
-                                        onChange={() => setUserReviewForm("note", 4)}
+                                        onChange={() => setUserReview({ ...userReview, note: 4 })}
                                     />
                                     <label title="4 stars" htmlFor="radio-4"><MdStar /></label>
 
@@ -218,7 +273,7 @@ export default function productDetails() {
                                         name="stars"
                                         id="radio-3"
                                         checked={userReview?.note && userReview.note == 3}
-                                        onChange={() => setUserReviewForm("note", 3)}
+                                        onChange={() => setUserReview({ ...userReview, note: 3 })}
                                     />
                                     <label title="3 stars" htmlFor="radio-3"><MdStar /></label>
 
@@ -228,7 +283,7 @@ export default function productDetails() {
                                         name="stars"
                                         id="radio-2"
                                         checked={userReview?.note && userReview.note == 2}
-                                        onChange={() => setUserReviewForm("note", 2)}
+                                        onChange={() => setUserReview({ ...userReview, note: 2 })}
                                     />
                                     <label title="2 stars" htmlFor="radio-2"><MdStar /></label>
 
@@ -238,7 +293,7 @@ export default function productDetails() {
                                         name="stars"
                                         id="radio-1"
                                         checked={userReview?.note && userReview.note == 1}
-                                        onChange={() => setUserReviewForm("note", 1)}
+                                        onChange={() => setUserReview({ ...userReview, note: 1 })}
                                     />
                                     <label title="1 stars" htmlFor="radio-1"><MdStar /></label>
 
@@ -246,11 +301,10 @@ export default function productDetails() {
                             </div>
 
                             <div style={{ marginTop: 40 }}>
-                                <label>Comment:</label>
+                                  <label>Comment:</label>
                                 <textarea
-
-                                    rows="1"
-                                    onChange={event => setUserReviewForm("comment", event.target.value)}
+                                    rows={1}
+                                    onChange={event => setUserReview({ ...userReview, comment: event.target.value })}
                                     value={userReview ? userReview.comment : ''}
                                 />
                                 <small>{userReview?.comment ? userReview.comment.length : 0}/570</small>
@@ -278,7 +332,6 @@ export default function productDetails() {
 
                 </div>
 
-                {/* List of reviews, only reviews with comments are displayed */}
                 <div className={stylesReviews.reviews_container} >
 
                     <hr />
@@ -290,7 +343,7 @@ export default function productDetails() {
 
                             <div className='flex_row wrap items_center '>
 
-                                <p style={{ fontSize: 70, margin: 10 }} className='items_center'><MdStar />{reviewStatistics.averageRating}</p>
+                                <p style={{ fontSize: 70, margin: 10 }} className='items_center'><MdStar />{reviewStatistics.averageReviews}</p>
 
                                 <div >
                                     {(() => {
@@ -302,16 +355,16 @@ export default function productDetails() {
                                                 <div key={c} className='items_center' style={{ marginBottom: 5 }}>
                                                     <label htmlFor="file" className='items_center'>{c} <MdStar /></label>
                                                     <div className={`${stylesReviews.progress_container} items_center`}>
-                                                        <div style={{ width: `${((reviewStatistics[c] / reviewStatistics.totalRatings) * 100)}%` }} />
+                                                        <div style={{ width: `${((reviewStatistics.quantityOfEachNote[c] / reviewStatistics.totalReviews) * 100)}%` }} />
                                                     </div>
-                                                    <small>({reviewStatistics[c]})</small>
+                                                    <small>({reviewStatistics.quantityOfEachNote[c]})</small>
                                                 </div>
                                             )
                                         }
                                         return listProgress
 
                                     })()}
-                                    <p>Total ratings: {reviewStatistics.totalRatings}</p>
+                                    <p>Total ratings: {reviewStatistics.totalReviews}</p>
                                 </div>
 
                             </div>
@@ -325,7 +378,7 @@ export default function productDetails() {
                                         setQuantityStars(null)
                                     }}
                                 >
-                                    All ({reviewStatistics.totalRatings})
+                                    All ({reviewStatistics.totalReviews})
                                 </button>
 
                                 {(() => {
@@ -337,11 +390,9 @@ export default function productDetails() {
                                                 key={i}
                                                 className={i == quantityStars ? "button_primary" : "button_secondary"}
                                                 title={`Show ${text} reviews`}
-                                                onClick={() => {
-                                                    setQuantityStars(i)
-                                                }}
+                                                onClick={() => { setQuantityStars(i) }}
                                             >
-                                                {text} ({reviewStatistics[i]})
+                                                {text} ({reviewStatistics.quantityOfEachNote[i]})
                                             </button>)
                                     }
                                     return buttons
@@ -352,6 +403,7 @@ export default function productDetails() {
                         </div>
                     }
 
+                    {/* List of reviews, only reviews with comments are displayed */}
                     {reviews.filter(review => review?.comment && review.comment.length > 0).length > 0
                         ? <>
                             {
@@ -360,7 +412,7 @@ export default function productDetails() {
                                         return (
                                             <div key={review.id} style={{ borderBottom: '1px solid red', marginTop: 20 }}>
                                                 <div className='items_center'>
-                                                    <img htmlFor="input_file" src={review.user.profileImageName ? `${baseURL}/auth/get-img/${review.user.profileImageName}` : "/img/person-circle.svg"} className="img_profile_view" />
+                                                    <img src={review.user.profileImageName ? `${baseURL}/auth/get-img/${review.user.profileImageName}` : "/img/person-circle.svg"} className="img_profile_view" />
                                                     <h4 style={{ marginLeft: 8 }} >{review.user.name}</h4>
                                                 </div>
                                                 {starsQuantity(review.note)}
@@ -378,7 +430,7 @@ export default function productDetails() {
                         <Pagination
                             actualPage={pagination.page}
                             totalPages={pagination.totalPages}
-                            onPress={value => listReviews(value)}
+                            onPress={(value: number) => listReviews(value)}
                         />
                     </div>
 

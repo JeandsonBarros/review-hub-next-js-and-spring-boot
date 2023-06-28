@@ -1,8 +1,8 @@
-import Alert from '@/components/Alert';
-import Card from '@/components/Card';
-import Input from '@/components/Input';
-import Load from '@/components/Load';
-import { changeForgottenPassword, sendEmail } from '@/service/auth_service';
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import Load from '../../components/Load';
+import { changeForgottenPassword, sendEmail } from '../../service/auth_service';
 import { useState } from 'react';
 import { MdMail, MdPassword } from 'react-icons/md';
 
@@ -18,7 +18,7 @@ function ForgotPassword() {
     const [email, setEmail] = useState("")
     const [newPassword, setNewPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
-    const [recoveryCode, setRecoveryCode] = useState()
+    const [recoveryCode, setRecoveryCode] = useState<number>()
 
     const closedAlert = () => {
         setAlert({ text: '', status: 'info', isVisible: false })
@@ -26,33 +26,53 @@ function ForgotPassword() {
 
     async function sendCode() {
 
-        if (!email)
+        if (!email) {
             return setAlert({ text: 'Do not leave empty fields', status: 'warning', isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await sendEmail(email)
+
+        try {
+            const responseMessage = await sendEmail(email)
+            setIsSendCode(true)
+            setAlert({ text: responseMessage, status: "success", isVisible: true })
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error sending code to email',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
         setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        if (response.status === 'success')
-            setIsSendCode(true)
     }
 
     async function changePassword() {
 
-        if (!newPassword || !confirmPassword || !recoveryCode)
+        if (!newPassword || !confirmPassword || !recoveryCode) {
             return setAlert({ text: 'Do not leave empty fields', status: 'warning', isVisible: true })
-
-        if (confirmPassword !== newPassword)
+        }
+        if (confirmPassword !== newPassword) {
             return setAlert({ text: 'Passwords do not match', status: 'warning', isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await changeForgottenPassword(email, newPassword, recoveryCode)
+
+        try {
+            const responseMessage = await changeForgottenPassword(email, newPassword, recoveryCode)
+            setAlert({ text: responseMessage, status: "success", isVisible: true })
+            setIsRestorationSuccessful(true)
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error updating password',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
         setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
-        if (response.status === 'success')
-            setIsRestorationSuccessful(true)
     }
 
     function view() {
@@ -75,36 +95,47 @@ function ForgotPassword() {
 
                     <div>
                         <Input
-                            value={recoveryCode}
                             placeholder="Code"
                             required={true}
                             type="number"
-                            setValue={text => setRecoveryCode(text)}
+                            setValue={(text: number) => setRecoveryCode(text)}
                         />
                     </div>
 
                     <div>
                         <Input
-                            value={newPassword}
                             placeholder="New password"
                             required={true}
                             type="password"
-                            setValue={text => setNewPassword(text)}
+                            setValue={(text: string) => setNewPassword(text)}
                         />
                     </div>
 
                     <div>
                         <Input
-                            value={confirmPassword}
                             placeholder="Confirm password"
                             required={true}
                             type="password"
-                            setValue={text => setConfirmPassword(text)}
+                            setValue={(text: string) => setConfirmPassword(text)}
                         />
                     </div>
 
-                    <button type="button" className="button_primary" onClick={changePassword}>Use code</button>
-                    <button type="button" className="button_secondary" onClick={() => setIsSendCode(false)}>Resend code</button>
+                    <button
+                        type="button"
+                        onClick={changePassword}
+                        className="button_primary flex_row items_center"
+                    >
+                        {isLoad && <Load size={15} css={{ marginRight: 5 }} />}
+                        <span> Use code</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className="button_secondary"
+                        onClick={() => setIsSendCode(false)}
+                    >
+                        Resend code
+                    </button>
 
                 </form>
             )
@@ -118,16 +149,22 @@ function ForgotPassword() {
 
                     <div>
                         <Input
-                            value={email}
                             placeholder="Email"
                             required={true}
                             type="email"
-                            setValue={text => setEmail(text)}
+                            setValue={(text: string) => setEmail(text)}
                             icon={<MdMail />}
                         />
                     </div>
 
-                    <button type="button" onClick={sendCode} className="button_primary">Send code to email</button>
+                    <button
+                        type="button"
+                        onClick={sendCode}
+                        className="button_primary flex_row items_center"
+                    >
+                        {isLoad && <Load size={15} css={{ marginRight: 5 }} />}
+                        <span>Send code to email</span>
+                    </button>
 
                 </form>
             )
@@ -140,8 +177,6 @@ function ForgotPassword() {
             <Alert isVisible={alert.isVisible} status={alert.status} closed={closedAlert}>
                 {alert.text}
             </Alert>
-
-            {isLoad && <div className={styles.div_loading}> <Load /> </div>}
 
             <Card isBordered={true}>
                 {view()}

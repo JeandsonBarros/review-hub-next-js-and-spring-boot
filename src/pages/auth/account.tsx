@@ -1,27 +1,25 @@
-import Alert from '@/components/Alert';
-import Card from '@/components/Card';
-import Input from '@/components/Input';
-import Load from '@/components/Load';
-import Modal from '@/components/Modal';
-import { baseURL } from '@/service/api';
-import { deleteAccount, getDataAccount, patchAccount } from '@/service/auth_service';
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import Load from '../../components/Load';
+import Modal from '../../components/Modal';
+import { baseURL } from '../../service/api';
+import { deleteAccount, getDataAccount, patchAccount } from '../../service/auth_service';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { MdMail, MdPassword, MdPerson } from 'react-icons/md';
 
 import styles from '../../styles/pages_styles/auth.module.css';
+import { UserDTO } from '../../types/dtos/UserDTO';
 
 function Account() {
 
     const router = useRouter()
 
-    const [selectImage, setSelectImage] = useState()
-    const [previewImage, setPreviewImage] = useState()
+    const [selectImage, setSelectImage] = useState<File>()
+    const [previewImage, setPreviewImage] = useState<string | undefined>()
 
-    const [profileImageURL, setProfileImageURL] = useState("")
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
+    const [userDTO, setUserDTO] = useState<UserDTO>()
     const [confirmPassword, setConfirmPassword] = useState("")
 
     const [isLoad, setIsLoad] = useState(false)
@@ -58,82 +56,118 @@ function Account() {
 
     async function getUserData() {
 
-        const response = await getDataAccount()
+        try {
 
-        if (response.data) {
+            const userData = await getDataAccount()
+            setUserDTO({ name: userData.name, email: userData.email })
 
-            setName(response.data.name)
-            setEmail(response.data.email)
-
-            if (response.data.profileImageName) {
-
-                const imgResponse = await fetch(`${baseURL}/auth/get-img/${response.data.profileImageName}`)
-                if (imgResponse.status == 200)
-                    setProfileImageURL(`${baseURL}/auth/get-img/${response.data.profileImageName}`)
-
+            if (userData.profileImageName) {
+                setPreviewImage(`${baseURL}/auth/get-img/${userData.profileImageName}`)
             }
 
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error getting account data',
+                status: 'error',
+                isVisible: true
+            })
         }
 
     }
 
-    async function updateData(event) {
+    async function updateData(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
 
-        if (!name || !email)
+        if (!userDTO.name || !userDTO.email) {
             return setAlert({ text: "Do not leave empty fields", status: "warning", isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await patchAccount({ name, email })
+
+        try {
+            const responseMessage = await patchAccount({ name: userDTO.name, email: userDTO.email })
+            setAlert({ text: responseMessage, status: 'success', isVisible: true })
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error updating data',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
         setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
     }
 
-    async function updateImg(event) {
+    async function updateImg(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
 
-        if (!selectImage)
+        if (!selectImage) {
             return setAlert({ text: "Please select an image", status: "warning", isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await patchAccount({ profileImage: selectImage })
-        setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
+        try {
+            const responseMessage = await patchAccount({ profileImage: selectImage })
+            setAlert({ text: responseMessage, status: 'success', isVisible: true })
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Register error',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
+        setIsLoad(false)
 
     }
 
-    async function updatePassword(event) {
+    async function updatePassword(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
 
-        if (!password || !confirmPassword)
-            return setAlert({ text: 'Do not leave empty fields', status: 'warning' })
-
-        if (confirmPassword !== password)
-            return setAlert({ text: 'Passwords do not match', status: 'warning' })
+        if (!userDTO.password || !confirmPassword) {
+            return setAlert({ text: 'Do not leave empty fields', status: 'warning', isVisible: true });
+        }
+        if (confirmPassword !== userDTO.password) {
+            return setAlert({ text: 'Passwords do not match', status: 'warning', isVisible: true })
+        }
 
         setIsLoad(true)
-        const response = await patchAccount({ password })
-        setIsLoad(false)
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
+        try {
+            const responseMessage = await patchAccount({ password: userDTO.password })
+            setAlert({ text: responseMessage, status: 'success', isVisible: true })
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error updating password',
+                status: 'error',
+                isVisible: true
+            })
+        }
+
+        setIsLoad(false)
 
     }
 
     async function deleteUserAccount() {
 
         setIsLoad(true)
-        const response = await deleteAccount()
-        setIsLoad(false)
 
-        if (response.status === 'success') {
+        try {
+            await deleteAccount()
             closedConfirmModal()
             localStorage.removeItem("token")
             router.push("/")
+        } catch (error) {
+            setAlert({
+                text: error.response ? error.response.data.message : 'Error deleting account',
+                status: 'error',
+                isVisible: true
+            })
         }
 
-        setAlert({ text: response.message, status: response.status, isVisible: true })
+        setIsLoad(false)
 
     }
 
@@ -160,7 +194,7 @@ function Account() {
                         <h2>Profile picture</h2>
 
                         <label htmlFor="input_file" className={`${styles.label_input_file} flex_col items_center`}>
-                            <img htmlFor="input_file" src={previewImage || (profileImageURL || "/person-circle.svg")} className={styles.img_profile_select} />
+                            <img src={previewImage || "/img/person-circle.svg"} className={styles.img_profile_select} />
                             Select file
                         </label>
 
@@ -171,6 +205,7 @@ function Account() {
                             className={styles.input_file}
                             accept="image/png, image/jpeg, image/gif, image/jpg"
                             onChange={event => {
+
                                 if (!event.target.files || event.target.files.length === 0) {
                                     setSelectImage(undefined)
                                     return
@@ -178,6 +213,7 @@ function Account() {
 
                                 // I've kept this example simple by using the first image instead of multiple
                                 setSelectImage(event.target.files[0])
+
                             }}
                         />
 
@@ -195,22 +231,22 @@ function Account() {
 
                         <div>
                             <Input
-                                value={name}
+                                value={userDTO && userDTO.name}
                                 placeholder="Name"
                                 required={true}
                                 type="text"
-                                setValue={text => setName(text)}
+                                setValue={(text: string) => setUserDTO({ ...userDTO, name: text })}
                                 icon={<MdPerson />}
                             />
                         </div>
 
                         <div>
                             <Input
-                                value={email}
+                                value={userDTO && userDTO.email}
                                 placeholder="Email"
                                 required={true}
                                 type="email"
-                                setValue={text => setEmail(text)}
+                                setValue={(text: string) => setUserDTO({ ...userDTO, email: text })}
                                 icon={<MdMail />}
                             />
                         </div>
@@ -229,11 +265,11 @@ function Account() {
 
                         <div>
                             <Input
-                                value={password}
+                                value={userDTO && userDTO.password}
                                 placeholder="Password"
                                 required={true}
                                 type="password"
-                                setValue={text => setPassword(text)}
+                                setValue={(text: string) => setUserDTO({ ...userDTO, password: text })}
                                 icon={<MdPassword />}
                             />
                         </div>
@@ -244,7 +280,7 @@ function Account() {
                                 placeholder="Confirm password"
                                 required={true}
                                 type="password"
-                                setValue={text => setConfirmPassword(text)}
+                                setValue={(text: string) => setConfirmPassword(text)}
                                 icon={<MdPassword />}
                             />
                         </div>
