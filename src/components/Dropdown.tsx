@@ -1,22 +1,19 @@
-import { createRef, useEffect, useState } from 'react';
+import { createRef, ReactNode, useEffect, useState } from 'react';
 
 import styles from '../styles/components_styles/dropdown.module.css';
 
-function getWindowDimensions() {
-    const { innerWidth: width, innerHeight: height } = window;
-    return {
-        width,
-        height
-    };
+interface DropdownProps {
+    children: ReactNode,
+    activationButton: JSX.Element
 }
 
-export default function Dropdown({ children, activationButton }) {
+export default function Dropdown({ children, activationButton }: DropdownProps) {
 
     const [visibleOptions, setVisibleOptions] = useState(false)
     const [marginTopContent, setMarginTopContent] = useState(30)
-    const containerRef = createRef()
-    const refButton = createRef()
-    const content = createRef()
+    const containerRef = createRef<any>()
+    const refButton = createRef<any>()
+    const content = createRef<any>()
 
     const handleVisibilit = () => {
         setVisibleOptions(!visibleOptions);
@@ -33,13 +30,13 @@ export default function Dropdown({ children, activationButton }) {
         <div className="justify_center items_center" ref={containerRef}>
 
             <div
-                style={{cursor: 'pointer'}}
+                style={{ cursor: 'pointer' }}
                 ref={refButton}
                 onClick={(event) => {
 
                     handleVisibilit()
-                    
-                    if (getWindowDimensions().width - event.currentTarget.offsetLeft <= 200) {
+
+                    if (window.innerWidth - event.currentTarget.offsetLeft <= 200) {
                         containerRef.current.className = 'justify_end items_center'
                     }
                     else if (event.currentTarget.offsetLeft < 200) {

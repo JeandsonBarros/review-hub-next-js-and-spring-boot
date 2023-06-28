@@ -1,7 +1,7 @@
-import { Product } from "../types/models/Product";
-import { api } from "./api";
 import { ProductDTO } from '../types/dtos/ProductDTO';
 import { PageProducts } from '../types/models/PageProducts';
+import { Product } from '../types/models/Product';
+import { api } from './api';
 
 export async function getProducts(page = 0, size = 30): Promise<PageProducts> {
     const response = await api.get(`/product/?page=${page}&size=${size}`)

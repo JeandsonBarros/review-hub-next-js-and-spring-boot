@@ -82,7 +82,7 @@ function ReviewItem({ review }: ReviewItemProps) {
 
     const [showMoreComment, setShowMoreComment] = useState(false)
 
-    function starsQuantity(note: number) {
+    function starsQuantityJSX(note: number): JSX.Element {
 
         let stars = []
 
@@ -115,13 +115,13 @@ function ReviewItem({ review }: ReviewItemProps) {
                         <p>{(() => {
                             return review.product.price.toLocaleString("en-US", { style: "currency", currency: "USD" });
                         })()}</p >
-                        {starsQuantity(review.product.averageReviews)}
+                        {starsQuantityJSX(review.product.averageReviews)}
                     </div>
                 </Link>
 
                 <div className='flex_col' style={{ margin: 10 }}>
 
-                    <p className='items_center'><span>Your note:</span> {starsQuantity(review.note)}</p>
+                    <p className='items_center'><span>Your note:</span> {starsQuantityJSX(review.note)}</p>
                     {(review?.comment && review.comment.length > 255)
                         ? <p>{review.comment.slice(0, 255)}...<button onClick={() => setShowMoreComment(true)} style={{ color: '#0077ff' }}>more</button> </p>
                         : <p>{review.comment}</p>

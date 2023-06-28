@@ -1,22 +1,31 @@
-import PropTypes from 'prop-types';
+import { ReactNode } from 'react';
 import { MdCheckCircle, MdInfo, MdOutlineClose, MdOutlineWarning, MdReport } from 'react-icons/md';
 
 import styles from '../styles/components_styles/alert.module.css';
 
-export default function Alert({ children, status, isVisible, closed }) {
+interface AlertProps {
+    children: ReactNode,
+    status?: string /* "info" | "error" | "warning" | "success" */,
+    isVisible: boolean,
+    closed: () => void
+}
+
+export default function Alert({ children, status, isVisible, closed }: AlertProps) {
 
     function iconStatus() {
 
-        if (status === 'info')
-            return <MdInfo className={styles.info} />
-        else if (status === 'success')
-            return <MdCheckCircle className={styles.success} />
-        else if (status === 'warning')
-            return <MdOutlineWarning className={styles.warning} />
-        else if (status === 'error')
-            return <MdReport className={styles.error} />
-        else
-            return <MdInfo className={styles.info} />
+        switch(status){
+            case 'info':
+                return <MdInfo className={styles.info} />
+            case 'success':
+                return <MdCheckCircle className={styles.success} />
+            case 'warning':
+                return <MdOutlineWarning className={styles.warning} />
+            case 'error':
+                return <MdReport className={styles.error} />
+            default:
+                return <MdInfo className={styles.info} />
+        }
 
     }
 
@@ -42,14 +51,3 @@ export default function Alert({ children, status, isVisible, closed }) {
         </>
     );
 }
-
-Alert.defaultProps = {
-    status: 'info',
-    isVisible: true,
-}
-
-Alert.propTypes = {
-    status: PropTypes.oneOf(["info", "error", "warning", "success", ""]),
-    closed: PropTypes.func.isRequired,
-    isVisible: PropTypes.bool,
-};

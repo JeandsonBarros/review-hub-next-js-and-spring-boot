@@ -1,8 +1,10 @@
+import { CSSProperties } from 'react';
+
 import styles from '../styles/components_styles/load.module.css';
 
 interface LoadProps {
     size?: number,
-    css?: any
+    css?: CSSProperties
 }
 
 export default function Load({ size, css }: LoadProps) {

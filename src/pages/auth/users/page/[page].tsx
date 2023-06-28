@@ -1,3 +1,8 @@
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { MdDelete, MdEditSquare, MdMoreVert, MdSearch } from 'react-icons/md';
+
+import { deleteAUser, findUser, getUsers, patchAUser } from '../../../..//service/auth_service';
 import Alert from '../../../../components/Alert';
 import Dropdown from '../../../../components/Dropdown';
 import Input from '../../../../components/Input';
@@ -5,14 +10,9 @@ import Load from '../../../../components/Load';
 import Modal from '../../../../components/Modal';
 import Pagination from '../../../../components/Pagination';
 import { baseURL } from '../../../../service/api';
-import { deleteAUser, findUser, getUsers, patchAUser } from '../../../..//service/auth_service';
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { MdDelete, MdEditSquare, MdMoreVert, MdSearch } from 'react-icons/md';
-
 import styles from '../../../../styles/pages_styles/auth.module.css';
-import { User } from '../../../../types/models/User';
 import { UserDTO } from '../../../../types/dtos/UserDTO';
+import { User } from '../../../../types/models/User';
 
 export default function Users() {
 

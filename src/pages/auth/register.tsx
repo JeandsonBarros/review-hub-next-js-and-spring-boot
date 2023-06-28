@@ -1,13 +1,13 @@
-import Alert from '../../components/Alert';
-import Card from '../../components/Card';
-import Input from '../../components/Input';
-import Load from '../../components/Load';
-import { completeRegistrationByCode, login, register } from '../../service/auth_service';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { MdMail, MdPassword, MdPerson } from 'react-icons/md';
 
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import Load from '../../components/Load';
+import { completeRegistrationByCode, login, register } from '../../service/auth_service';
 import styles from '../../styles/pages_styles/auth.module.css';
 import { UserDTO } from '../../types/dtos/UserDTO';
 
@@ -26,7 +26,6 @@ function Register() {
     }
 
     async function registerUser() {
-
 
         if (!user.name || !user.password || !confirmPassword || !user.email)
             return setAlert({ text: 'Do not leave empty fields', status: 'warning', isVisible: true })
@@ -96,10 +95,6 @@ function Register() {
                     <h3>Register</h3>
                 </div>
 
-                <div style={{ marginTop: 10 }}>
-                    {isLoad && <Load />}
-                </div>
-
                 {!isSendCode ?
 
                     <form className={`${styles.form_auth} flex_col`}>
@@ -149,8 +144,24 @@ function Register() {
                         </div>
 
                         <div className="flex_col items_center">
-                            <button type="button" onClick={registerUser} className="button_primary">Sing in</button>
-                            <Link href='/auth/login' style={{ marginTop: 20 }} className="color_info">Login</Link>
+
+                            <button
+                                type="button"
+                                onClick={registerUser}
+                                className="button_primary flex_row items_center"
+                            >
+                                {isLoad && <Load css={{ marginRight: 5 }} size={15} />}
+                                <span>Sing in</span>
+                            </button>
+
+                            <Link
+                                href='/auth/login'
+                                style={{ marginTop: 20 }}
+                                className="color_info"
+                            >
+                                Login
+                            </Link>
+
                         </div>
 
                     </form>
@@ -170,8 +181,18 @@ function Register() {
                         </div>
 
                         <div className="flex_row justify_center">
-                            <button type="button" onClick={useCode} className="button_primary">Use code</button>
+
+                            <button
+                                type="button"
+                                onClick={useCode}
+                                className="button_primary flex_row items_center"
+                            >
+                                {isLoad && <Load css={{ marginRight: 5 }} size={15} />}
+                                <span>Use code</span>
+                            </button>
+
                             <button type="button" onClick={registerUser} className="button_secondary">Resend email</button>
+
                         </div>
 
                     </form>

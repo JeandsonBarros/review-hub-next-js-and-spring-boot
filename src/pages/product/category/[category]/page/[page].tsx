@@ -1,12 +1,13 @@
-import Alert from "../../../../../components/Alert";
-import ProductCard from "../../../../../components/ProductCard";
-import { getProductByCategory } from "../../../../../service/product_service";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+
+import Alert from '../../../../../components/Alert';
+import Load from '../../../../../components/Load';
+import Pagination from '../../../../../components/Pagination';
+import ProductCard from '../../../../../components/ProductCard';
+import { getProductByCategory } from '../../../../../service/product_service';
 import styles from '../../../../../styles/pages_styles/products.module.css';
-import Pagination from "../../../../../components/Pagination";
-import Load from "../../../../../components/Load";
-import { Product } from "../../../../../types/models/Product";
+import { Product } from '../../../../../types/models/Product';
 
 function Category() {
 

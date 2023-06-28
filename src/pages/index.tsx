@@ -1,12 +1,11 @@
-
-import { createRef, useEffect, useLayoutEffect, useState } from 'react';
-import { MdOutlineKeyboardArrowLeft, MdOutlineKeyboardArrowRight, MdOutlineAddCircle } from 'react-icons/md';
-
-import styles from '../styles/pages_styles/products.module.css';
 import Link from 'next/link';
-import { getProductByCategory } from '../service/product_service';
+import { createRef, useEffect, useLayoutEffect, useState } from 'react';
+import { MdOutlineAddCircle, MdOutlineKeyboardArrowLeft, MdOutlineKeyboardArrowRight } from 'react-icons/md';
+
 import Alert from '../components/Alert';
 import ProductCard from '../components/ProductCard';
+import { getProductByCategory } from '../service/product_service';
+import styles from '../styles/pages_styles/products.module.css';
 import { Product } from '../types/models/Product';
 
 export async function getStaticProps() {

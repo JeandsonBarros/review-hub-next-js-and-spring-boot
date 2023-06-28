@@ -1,16 +1,21 @@
-import { baseURL } from '../service/api';
-import { getDataAccount } from '../service/auth_service';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { MdBrightness2, MdReviews, MdSearch, MdSunny, MdOutlineClose } from 'react-icons/md';
+import { MdBrightness2, MdOutlineClose, MdReviews, MdSearch, MdSunny } from 'react-icons/md';
 
+import { baseURL } from '../service/api';
+import { getDataAccount } from '../service/auth_service';
 import headerStyles from '../styles/components_styles/header.module.css';
+import { User } from '../types/models/User';
 import Dropdown from './Dropdown';
 import Load from './Load';
-import { User } from '../types/models/User';
 
-function Header({ themeChange, theme }) {
+interface HeaderProps {
+    themeChange: () => void,
+    theme: string
+}
+
+function Header({ themeChange, theme }: HeaderProps) {
 
     const [isLogged, setIsLogged] = useState(false)
     const [search, setSearch] = useState("")
@@ -29,7 +34,7 @@ function Header({ themeChange, theme }) {
             getUserData()
         }
 
-    }, [theme, pathname])
+    }, [pathname])
 
     useEffect(() => {
         if (visibleSearchSmallScreen) refInputSearchSmallScreen.current.focus()

@@ -1,9 +1,15 @@
-import PropTypes from 'prop-types';
+import { ReactNode } from 'react';
 import { MdOutlineClose } from 'react-icons/md';
 
 import styles from '../styles/components_styles/modal.module.css';
 
-export default function Modal({ children, onClosed, isVisible }) {
+interface ModalProps {
+    children: ReactNode,
+    onClosed: () => void,
+    isVisible: boolean
+}
+
+export default function Modal({ children, onClosed, isVisible }: ModalProps) {
 
     return (
         <>
@@ -20,13 +26,3 @@ export default function Modal({ children, onClosed, isVisible }) {
         </>
     );
 }
-
-Modal.defaultProps = {
-    isVisible: true,
-    onClosed: () => console.log("onClosed was not informed!")
-}
-
-Modal.propTypes = {
-    onClosed: PropTypes.func.isRequired,
-    isVisible: PropTypes.bool,
-};

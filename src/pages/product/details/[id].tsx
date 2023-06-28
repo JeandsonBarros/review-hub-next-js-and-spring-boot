@@ -1,20 +1,26 @@
-import Alert from '../../../components/Alert';
-import Card from '../../../components/Card';
-import { baseURL } from '../../../service/api';
-import { getProduct } from '../../../service/product_service';
-import { deleteReview, getProductReviewStatistics, getReviewsByProduct, postReview, putReview, selectUserReviewByProduct } from '../../../service/review_service';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MdStar, MdStarHalf, MdStarOutline } from 'react-icons/md';
 
+import Alert from '../../../components/Alert';
+import Card from '../../../components/Card';
+import Pagination from '../../../components/Pagination';
+import { baseURL } from '../../../service/api';
+import { getProduct } from '../../../service/product_service';
+import {
+    deleteReview,
+    getProductReviewStatistics,
+    getReviewsByProduct,
+    postReview,
+    putReview,
+    selectUserReviewByProduct,
+} from '../../../service/review_service';
 import stylesProducts from '../../../styles/pages_styles/products.module.css';
 import stylesReviews from '../../../styles/pages_styles/reviews.module.css';
-import Link from 'next/link';
-import Pagination from '../../../components/Pagination';
 import { Product } from '../../../types/models/Product';
-import { ReviewDTO } from '../../../types/dtos/ReviewDTO';
-import { Review } from '../../../types/models/Review';
 import { ProductReviewStatistics } from '../../../types/models/ProductReviewStatistics';
+import { Review } from '../../../types/models/Review';
 
 export default function productDetails() {
 
@@ -24,7 +30,7 @@ export default function productDetails() {
     const [isLogged, setIsLogged] = useState(false)
     const [reviews, setReviews] = useState<Review[]>([])
     const [reviewStatistics, setReviewStatistics] = useState<ProductReviewStatistics>()
-    const [userReview, setUserReview] = useState<ReviewDTO>()
+    const [userReview, setUserReview] = useState<Review>()
     const [alert, setAlert] = useState({ text: '', status: '', isVisible: false })
     const [pagination, setPagination] = useState({ page: 0, totalPages: 0 })
     const [quantityStars, setQuantityStars] = useState<number | null>(null)
@@ -56,21 +62,14 @@ export default function productDetails() {
 
         if (localStorage.getItem('token')) {
             try {
-
                 setIsLogged(true)
                 const responseUserReview = await selectUserReviewByProduct(id)
-                setUserReview({
-                    id: responseUserReview.id,
-                    note: responseUserReview.note,
-                    comment: responseUserReview.comment,
-                    productId: responseUserReview.product.id
-                })
-
+                setUserReview(responseUserReview)
             } catch (error) {
-                console.log(error);
+                console.log(error.response.status);
             }
         }
-        
+
     }
 
     async function listReviews(page = 1) {
@@ -145,7 +144,7 @@ export default function productDetails() {
         }
 
         try {
-            const response = await putReview(userReview.id, userReview)
+            const response = await putReview(userReview.id, { comment: userReview.comment, note: userReview.note, productId: id })
             setAlert({ text: response, status: 'success', isVisible: true })
             getAllData()
 
@@ -177,7 +176,7 @@ export default function productDetails() {
 
     }
 
-    function starsQuantity(note: number): ReactElement {
+    function starsQuantityJSX(note: number): JSX.Element {
 
         let stars = []
 
@@ -196,6 +195,65 @@ export default function productDetails() {
 
     }
 
+    function inputsStarsJSX(): JSX.Element {
+
+        let inputs = []
+        for (let i = 5; i >= 1; i--) {
+
+            inputs.push(
+                <input
+                    key={`input-start-${i}`}
+                    type="radio"
+                    name="stars"
+                    id={`start-${i}`}
+                    checked={userReview ? userReview.note == i : false}
+                    onChange={() => setUserReview({ ...userReview, note: i })}
+                />
+            )
+            inputs.push(<label key={`label-start-${i}`} title={`${i} stars`} htmlFor={`start-${i}`}><MdStar /></label>)
+        }
+
+        return (<div className={`${stylesReviews.stars}`} >{inputs}</div>)
+
+    }
+
+    function statisticsReviewsJSX(): JSX.Element[] {
+
+        let listProgress = []
+        for (let c = 5; c >= 1; c--) {
+
+            listProgress.push(
+                <div key={c} className='items_center' style={{ marginBottom: 5 }}>
+                    <label htmlFor="file" className='items_center'>{c} <MdStar /></label>
+                    <div className={`${stylesReviews.progress_container} items_center`}>
+                        <div style={{ width: `${((reviewStatistics.quantityOfEachNote[c] / reviewStatistics.totalReviews) * 100)}%` }} />
+                    </div>
+                    <small>({reviewStatistics.quantityOfEachNote[c]})</small>
+                </div>
+            )
+        }
+
+        return listProgress
+
+    }
+
+    function buttonsListReviewsByStarsJSX(): JSX.Element[] {
+        let buttons = []
+        for (let i = 5; i >= 1; i--) {
+            let text = i == 1 ? i + " star" : i + " stars"
+            buttons.push(
+                <button
+                    key={i}
+                    className={i == quantityStars ? "button_primary" : "button_secondary"}
+                    title={`Show ${text} reviews`}
+                    onClick={() => { setQuantityStars(i) }}
+                >
+                    {text} ({reviewStatistics.quantityOfEachNote[i]})
+                </button>)
+        }
+        return buttons
+    }
+
     return (
         <section className={`${stylesProducts.container_infos}`}>
 
@@ -210,20 +268,15 @@ export default function productDetails() {
                     <div className={stylesProducts.details_product}>
 
                         <img className={stylesProducts.img_details} src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/product-icon.webp"} />
-
                         <div className={stylesProducts.vertical_line} />
 
                         <div className={stylesProducts.more_info}>
 
                             <p className={stylesProducts.category_product}>{product.category}</p>
-
                             <h1>{product.name}</h1>
 
-                            <p>{(() => {
-                                return product.price.toLocaleString("en-US", { style: "currency", currency: "USD" });
-                            })()}</p >
-
-                            {starsQuantity(product.averageReviews)}
+                            {product.price.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+                            {starsQuantityJSX(product.averageReviews)}
 
                             <div style={{ marginTop: 10, maxWidth: 400 }}>{product.description}</div>
 
@@ -245,67 +298,15 @@ export default function productDetails() {
 
                             <div >
                                 <label ><span style={{ color: 'red' }}>*</span>Note:</label>
-                                <div className={`${stylesReviews.stars}`} >
-
-                                    <input
-                                        type="radio"
-                                        value={5}
-                                        name="stars"
-                                        id="radio-5"
-                                        checked={userReview?.note && userReview.note == 5}
-                                        onChange={() => setUserReview({ ...userReview, note: 5 })}
-                                    />
-                                    <label title="5 stars" htmlFor="radio-5"><MdStar /></label>
-
-                                    <input
-                                        type="radio"
-                                        value={4}
-                                        name="stars"
-                                        id="radio-4"
-                                        checked={userReview?.note && userReview.note == 4}
-                                        onChange={() => setUserReview({ ...userReview, note: 4 })}
-                                    />
-                                    <label title="4 stars" htmlFor="radio-4"><MdStar /></label>
-
-                                    <input
-                                        type="radio"
-                                        value={3}
-                                        name="stars"
-                                        id="radio-3"
-                                        checked={userReview?.note && userReview.note == 3}
-                                        onChange={() => setUserReview({ ...userReview, note: 3 })}
-                                    />
-                                    <label title="3 stars" htmlFor="radio-3"><MdStar /></label>
-
-                                    <input
-                                        type="radio"
-                                        value={2}
-                                        name="stars"
-                                        id="radio-2"
-                                        checked={userReview?.note && userReview.note == 2}
-                                        onChange={() => setUserReview({ ...userReview, note: 2 })}
-                                    />
-                                    <label title="2 stars" htmlFor="radio-2"><MdStar /></label>
-
-                                    <input
-                                        type="radio"
-                                        value={1}
-                                        name="stars"
-                                        id="radio-1"
-                                        checked={userReview?.note && userReview.note == 1}
-                                        onChange={() => setUserReview({ ...userReview, note: 1 })}
-                                    />
-                                    <label title="1 stars" htmlFor="radio-1"><MdStar /></label>
-
-                                </div>
+                                {inputsStarsJSX()}
                             </div>
 
                             <div style={{ marginTop: 40 }}>
-                                  <label>Comment:</label>
+                                <label>Comment:</label>
                                 <textarea
                                     rows={1}
                                     onChange={event => setUserReview({ ...userReview, comment: event.target.value })}
-                                    value={userReview ? userReview.comment : ''}
+                                    value={userReview?.comment ? userReview.comment : ''}
                                 />
                                 <small>{userReview?.comment ? userReview.comment.length : 0}/570</small>
                             </div>
@@ -346,24 +347,7 @@ export default function productDetails() {
                                 <p style={{ fontSize: 70, margin: 10 }} className='items_center'><MdStar />{reviewStatistics.averageReviews}</p>
 
                                 <div >
-                                    {(() => {
-
-                                        let listProgress = []
-                                        for (let c = 5; c >= 1; c--) {
-
-                                            listProgress.push(
-                                                <div key={c} className='items_center' style={{ marginBottom: 5 }}>
-                                                    <label htmlFor="file" className='items_center'>{c} <MdStar /></label>
-                                                    <div className={`${stylesReviews.progress_container} items_center`}>
-                                                        <div style={{ width: `${((reviewStatistics.quantityOfEachNote[c] / reviewStatistics.totalReviews) * 100)}%` }} />
-                                                    </div>
-                                                    <small>({reviewStatistics.quantityOfEachNote[c]})</small>
-                                                </div>
-                                            )
-                                        }
-                                        return listProgress
-
-                                    })()}
+                                    {statisticsReviewsJSX()}
                                     <p>Total ratings: {reviewStatistics.totalReviews}</p>
                                 </div>
 
@@ -381,22 +365,7 @@ export default function productDetails() {
                                     All ({reviewStatistics.totalReviews})
                                 </button>
 
-                                {(() => {
-                                    let buttons = []
-                                    for (let i = 5; i >= 1; i--) {
-                                        let text = i == 1 ? i + " star" : i + " stars"
-                                        buttons.push(
-                                            <button
-                                                key={i}
-                                                className={i == quantityStars ? "button_primary" : "button_secondary"}
-                                                title={`Show ${text} reviews`}
-                                                onClick={() => { setQuantityStars(i) }}
-                                            >
-                                                {text} ({reviewStatistics.quantityOfEachNote[i]})
-                                            </button>)
-                                    }
-                                    return buttons
-                                })()}
+                                {buttonsListReviewsByStarsJSX()}
 
                             </div>
 
@@ -415,7 +384,7 @@ export default function productDetails() {
                                                     <img src={review.user.profileImageName ? `${baseURL}/auth/get-img/${review.user.profileImageName}` : "/img/person-circle.svg"} className="img_profile_view" />
                                                     <h4 style={{ marginLeft: 8 }} >{review.user.name}</h4>
                                                 </div>
-                                                {starsQuantity(review.note)}
+                                                {starsQuantityJSX(review.note)}
                                                 <p>{review.comment}</p>
                                                 <small>{review.date}</small>
                                             </div>

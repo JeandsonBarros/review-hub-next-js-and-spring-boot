@@ -1,13 +1,13 @@
-import Alert from '../../components/Alert';
-import Card from '../../components/Card';
-import Input from '../../components/Input';
-import Load from '../../components/Load';
-import { login } from '../../service/auth_service';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { MdMail, MdPassword, MdPerson } from 'react-icons/md';
 
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import Load from '../../components/Load';
+import { login } from '../../service/auth_service';
 import styles from '../../styles/pages_styles/auth.module.css';
 
 function Login() {

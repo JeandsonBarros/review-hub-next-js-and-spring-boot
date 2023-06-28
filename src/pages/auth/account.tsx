@@ -1,3 +1,7 @@
+import { useRouter } from 'next/router';
+import { FormEvent, useEffect, useState } from 'react';
+import { MdMail, MdPassword, MdPerson } from 'react-icons/md';
+
 import Alert from '../../components/Alert';
 import Card from '../../components/Card';
 import Input from '../../components/Input';
@@ -5,10 +9,6 @@ import Load from '../../components/Load';
 import Modal from '../../components/Modal';
 import { baseURL } from '../../service/api';
 import { deleteAccount, getDataAccount, patchAccount } from '../../service/auth_service';
-import { useRouter } from 'next/router';
-import { FormEvent, useEffect, useState } from 'react';
-import { MdMail, MdPassword, MdPerson } from 'react-icons/md';
-
 import styles from '../../styles/pages_styles/auth.module.css';
 import { UserDTO } from '../../types/dtos/UserDTO';
 

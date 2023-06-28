@@ -1,9 +1,11 @@
+import { CSSProperties, ReactNode } from 'react';
+
 import styles from '../styles/components_styles/card.module.css';
 
 interface CardProps {
-    children: any,
+    children: ReactNode,
     isBordered?: boolean,
-    css?: any
+    css?: CSSProperties
 }
 
 function Card({ children, isBordered, css }: CardProps) {

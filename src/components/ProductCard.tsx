@@ -1,13 +1,15 @@
-import Link from "next/link";
-import { MdStar, MdStarHalf, MdStarOutline } from "react-icons/md";
-import styles from "../styles/components_styles/product-card.module.css";
-import { baseURL } from "../service/api";
-import Card from "./Card";
-import { Product } from "../types/models/Product";
+import Link from 'next/link';
+import { CSSProperties } from 'react';
+import { MdStar, MdStarHalf, MdStarOutline } from 'react-icons/md';
 
-interface ProductCardProps{
+import { baseURL } from '../service/api';
+import styles from '../styles/components_styles/product-card.module.css';
+import { Product } from '../types/models/Product';
+import Card from './Card';
+
+interface ProductCardProps {
     product: Product,
-    css?: any
+    css?: CSSProperties
 }
 
 export default function ProductCard({ product, css }: ProductCardProps) {
@@ -16,7 +18,7 @@ export default function ProductCard({ product, css }: ProductCardProps) {
         if (product) {
 
             let stars = []
-            
+
             for (let c = 1; c <= 5; c++) {
 
                 if (product.averageReviews % Math.floor(product.averageReviews) > 0 && (c - 1) + (product.averageReviews % Math.floor(product.averageReviews)) === product.averageReviews)
@@ -41,11 +43,7 @@ export default function ProductCard({ product, css }: ProductCardProps) {
                         <img src={product.imgName ? `${baseURL}/product/get-img/${product.imgName}` : "/img/product-icon.webp"} />
                         <div>
                             <small> {product.name.length <= 70 ? product.name : product.name.slice(0, 70) + "..."}</small>
-                            <h3>
-                                {(() => {
-                                    return product.price.toLocaleString("en-US", {style:"currency", currency:"USD"});
-                                })()}
-                            </h3>
+                            <h3> {product.price.toLocaleString("en-US", { style: "currency", currency: "USD" })} </h3>
                             {starsQuantity()}
                         </div>
                     </div>

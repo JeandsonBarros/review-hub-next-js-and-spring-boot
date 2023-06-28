@@ -1,13 +1,13 @@
+import Link from 'next/link';
+import { useState } from 'react';
+import { MdMail, MdPassword } from 'react-icons/md';
+
 import Alert from '../../components/Alert';
 import Card from '../../components/Card';
 import Input from '../../components/Input';
 import Load from '../../components/Load';
 import { changeForgottenPassword, sendEmail } from '../../service/auth_service';
-import { useState } from 'react';
-import { MdMail, MdPassword } from 'react-icons/md';
-
 import styles from '../../styles/pages_styles/auth.module.css';
-import Link from 'next/link';
 
 function ForgotPassword() {
 
@@ -75,7 +75,7 @@ function ForgotPassword() {
 
     }
 
-    function view() {
+    function viewJSX(): JSX.Element {
 
         if (isRestorationSuccessful) {
             return (
@@ -179,7 +179,7 @@ function ForgotPassword() {
             </Alert>
 
             <Card isBordered={true}>
-                {view()}
+                {viewJSX()}
             </Card>
 
         </section>

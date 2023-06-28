@@ -18,7 +18,7 @@ export async function login(email: string, password: string): Promise<string> {
 
 export async function register(userDTO: UserDTO): Promise<string> {
 
-    const response = await api.post('/auth/start-registration',userDTO)
+    const response = await api.post('/auth/start-registration', userDTO)
     return response.data.message
 
 }
@@ -98,10 +98,10 @@ export async function changeForgottenPassword(email: string, newPassword: string
 
 /* --------- Admin and Master functions ------------ */
 
-export async function getUsers(page = 0): Promise<PageUsers> {
+export async function getUsers(page = 0, size = 30): Promise<PageUsers> {
 
     const token = localStorage.getItem('token');
-    const response = await api.get(`/auth/list-users?page=${page}&size=30`,
+    const response = await api.get(`/auth/list-users?page=${page}&size=${size}`,
         {
             headers: {
                 'Authorization': `${token}`,
@@ -113,10 +113,10 @@ export async function getUsers(page = 0): Promise<PageUsers> {
 
 }
 
-export async function findUser(page = 0, nameToSearch = ''): Promise<PageUsers> {
+export async function findUser(page = 0, nameToSearch = '', size = 30): Promise<PageUsers> {
 
     const token = localStorage.getItem('token');
-    const response = await api.get(`/auth/list-users?page=${page}&size=30&name=${nameToSearch}`,
+    const response = await api.get(`/auth/list-users?page=${page}&size=${size}&name=${nameToSearch}`,
         {
             headers: {
                 'Authorization': `${token}`,

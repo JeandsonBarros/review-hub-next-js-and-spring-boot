@@ -25,6 +25,7 @@ interface ProductItemProps {
     updateProduct: (productDTO: ProductDTO, id: Number) => Promise<void>,
     removeProduct: (id: Number) => Promise<void>,
 }
+
 interface ModalProductProps {
     productUpdate?: Product,
     onSave: (productDTO: ProductDTO) => Promise<void>,

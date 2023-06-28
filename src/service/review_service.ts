@@ -1,8 +1,8 @@
-import { ReviewDTO } from './../types/dtos/ReviewDTO';
-import { PageReviews } from "../types/models/PageReviews";
-import { Review } from "../types/models/Review";
-import { api } from "./api";
+import { PageReviews } from '../types/models/PageReviews';
 import { ProductReviewStatistics } from '../types/models/ProductReviewStatistics';
+import { Review } from '../types/models/Review';
+import { ReviewDTO } from './../types/dtos/ReviewDTO';
+import { api } from './api';
 
 export async function getReviewsByProduct(productId: number, page = 0, size = 30, note?: number): Promise<PageReviews> {
     const response = await api.get(`/review/product/${productId}?page=${page}&size=${size}${note && ("&note=" + note)}`);

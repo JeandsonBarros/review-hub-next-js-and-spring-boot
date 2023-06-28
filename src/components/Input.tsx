@@ -1,5 +1,4 @@
-import PropTypes from 'prop-types';
-import { createRef, useEffect, useState } from 'react';
+import { createRef, CSSProperties, useEffect, useState } from 'react';
 import { MdOutlineVisibility, MdOutlineVisibilityOff } from 'react-icons/md';
 
 import inputStyles from '../styles/components_styles/input.module.css';
@@ -8,10 +7,10 @@ interface InputProps {
     type?: string,
     required?: boolean,
     placeholder?: string,
-    icon?: any,
+    icon?: JSX.Element,
     value?: string | number,
-    setValue?: any,
-    css?: any,
+    setValue?: (value: string | number)=>void,
+    css?: CSSProperties,
     step?: string
 }
 
@@ -81,7 +80,7 @@ export default function Input({ type, step, required, placeholder, icon, value, 
                     ref={inputRef}
                     type={`${typeInput}`}
                     value={value && value}
-                    onChange={event => setValue && setValue(event.target.value)}
+                    onChange={event => setValue? setValue(event.target.value) : console.error("setValue is undefined")}
                 />
 
             </div>
@@ -96,10 +95,4 @@ export default function Input({ type, step, required, placeholder, icon, value, 
         </div>
     );
 }
-
-Input.defaultProps = {
-    type: 'text',
-    required: false,
-    step: '1'
-};
 

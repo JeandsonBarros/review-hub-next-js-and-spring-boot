@@ -34,6 +34,7 @@
     cursor: pointer;
 }
 
+
 .stars:hover input[type=radio]:checked~label {
     color: var(--primary-active);
 }

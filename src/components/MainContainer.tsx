@@ -1,12 +1,16 @@
-import { getDataAccount } from '../service/auth_service';
 import Head from 'next/head';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 
+import { getDataAccount } from '../service/auth_service';
 import Footer from './Footer';
 import Header from './Header';
 
-function MainContainer({ children }) {
+interface MainContainerProps {
+    children: ReactNode
+}
+
+function MainContainer({ children }: MainContainerProps) {
 
     const [theme, setTheme] = useState("light");
     const pathname = usePathname();
@@ -18,7 +22,7 @@ function MainContainer({ children }) {
         if (pathname) {
 
             const token = localStorage.getItem('token')
-            
+
             let path = pathname
             if (path.includes("/page"))
                 path = path.split("/page")[0]
@@ -88,7 +92,7 @@ function MainContainer({ children }) {
     /* Checks if the logged in user is authorized to access a certain route,
      if not, it is redirected to the home page */
     async function isAuthorized() {
-       
+
         try {
             const userData = await getDataAccount()
             if (userData.role === "USER") router.push("/")
@@ -96,7 +100,7 @@ function MainContainer({ children }) {
             console.log(error);
             router.push("/")
         }
-        
+
     }
 
     return (

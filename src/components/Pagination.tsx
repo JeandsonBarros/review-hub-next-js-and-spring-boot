@@ -1,7 +1,12 @@
-import PropTypes from 'prop-types';
 import { MdKeyboardDoubleArrowRight, MdKeyboardDoubleArrowLeft } from 'react-icons/md';
 
-export default function Pagination({ totalPages, actualPage, onPress }) {
+interface PaginationProps {
+    totalPages: number,
+    actualPage: number,
+    onPress?: (page: number) => void
+}
+
+export default function Pagination({ totalPages, actualPage, onPress }: PaginationProps) {
 
     function show() {
 
@@ -16,7 +21,8 @@ export default function Pagination({ totalPages, actualPage, onPress }) {
                     key={cont}
                     type='button'
                     className={"rounded" + (actualPage === cont ? " button_primary" : " button_secondary")}
-                    onClick={(event: any) => onPress(Number(event.target.id))}>
+                    onClick={(event: any) => onPress? onPress(Number(event.target.id)) : console.error("onPress is undefined")}
+                    >
                     {cont}
                 </button>
             )
@@ -39,13 +45,3 @@ export default function Pagination({ totalPages, actualPage, onPress }) {
         </>
     );
 }
-
-Pagination.propTypes = {
-    totalPages: PropTypes.number,
-    actualPage: PropTypes.number
-};
-
-Pagination.defaultProps = {
-    totalPages: 5,
-    actualPage: 1
-};
