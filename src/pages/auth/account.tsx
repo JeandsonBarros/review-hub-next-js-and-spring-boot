@@ -231,7 +231,7 @@ function Account() {
 
                         <div>
                             <Input
-                                value={userDTO && userDTO.name}
+                                value={userDTO ? userDTO.name : ''}
                                 placeholder="Name"
                                 required={true}
                                 type="text"
@@ -242,7 +242,7 @@ function Account() {
 
                         <div>
                             <Input
-                                value={userDTO && userDTO.email}
+                                value={userDTO ? userDTO.email : ''}
                                 placeholder="Email"
                                 required={true}
                                 type="email"
@@ -265,7 +265,7 @@ function Account() {
 
                         <div>
                             <Input
-                                value={userDTO && userDTO.password}
+                                value={userDTO ? userDTO.password: ''}
                                 placeholder="Password"
                                 required={true}
                                 type="password"
